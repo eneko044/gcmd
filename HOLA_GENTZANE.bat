@@ -181,12 +181,12 @@ public static class GentzaneShow
     static void Goto(int n)
     {
         scene = n; st = 0;
-        ps = 0; rate = 1; netExit = -1; crashT = -1; pn = 0; nextBurst = 2.0; lastHop = -1; pressT = -1; urlOpened = false;
+        ps = 0; rate = 1; cine = 0; fxStep = 0; netExit = -1; crashT = -1; pn = 0; nextBurst = 2.0; lastHop = -1; pressT = -1; urlOpened = false;
     }
 
     static void Step(double dt)
     {
-        UpdRain(dt); UpdParts(dt);
+        UpdRain(dt); UpdParts(scene == 2 ? dt * rate : dt);
         bg = 0;
         for (int i = 0; i < cb.Length; i++) { cb[i] = ' '; cc[i] = 0; cbg[i] = -1; }
         if (scene == 1) S1(dt); else if (scene == 2) S2(dt); else S3(dt);
@@ -348,12 +348,17 @@ public static class GentzaneShow
     // ================================================================ particulas
     const int PMAX = 700;
     static double[] px = new double[PMAX], py = new double[PMAX], pvx = new double[PMAX], pvy = new double[PMAX], pl = new double[PMAX], pm = new double[PMAX];
-    static int[] pc = new int[PMAX]; static int pn;
+    static int[] pc = new int[PMAX], pt = new int[PMAX]; static char[] pch = new char[PMAX]; static int pn;
+    static double[] boomX = new double[16], boomY = new double[16]; static int nBoom;
+    const string CONF = "*+o~%#&$@";
 
-    static void Spawn(double x, double y, double vx, double vy, double life, int col)
+    static void Spawn(double x, double y, double vx, double vy, double life, int col) { SpawnT(0, x, y, vx, vy, life, col); }
+
+    static void SpawnT(int type, double x, double y, double vx, double vy, double life, int col)
     {
         if (pn >= PMAX) return;
-        px[pn] = x; py[pn] = y; pvx[pn] = vx; pvy[pn] = vy; pl[pn] = life; pm[pn] = life; pc[pn] = col; pn++;
+        px[pn] = x; py[pn] = y; pvx[pn] = vx; pvy[pn] = vy; pl[pn] = life; pm[pn] = life; pc[pn] = col;
+        pt[pn] = type; pch[pn] = CONF[rnd.Next(CONF.Length)]; pn++;
     }
 
     static void Burst(double x, double y, int n, double sp, int col)
@@ -367,27 +372,79 @@ public static class GentzaneShow
 
     static void UpdParts(double dt)
     {
+        nBoom = 0;
         for (int i = 0; i < pn; i++)
         {
             pl[i] -= dt;
             if (pl[i] <= 0)
             {
-                pn--; px[i] = px[pn]; py[i] = py[pn]; pvx[i] = pvx[pn]; pvy[i] = pvy[pn]; pl[i] = pl[pn]; pm[i] = pm[pn]; pc[i] = pc[pn]; i--;
+                if (pt[i] == 4 && nBoom < 16) { boomX[nBoom] = px[i]; boomY[nBoom] = py[i]; nBoom++; }
+                pn--; px[i] = px[pn]; py[i] = py[pn]; pvx[i] = pvx[pn]; pvy[i] = pvy[pn]; pl[i] = pl[pn]; pm[i] = pm[pn]; pc[i] = pc[pn];
+                pt[i] = pt[pn]; pch[i] = pch[pn]; i--;
                 continue;
             }
-            pvy[i] += 12 * dt; pvx[i] *= 1 - 0.8 * dt;
+            double g = pt[i] == 1 ? -6 : pt[i] == 2 ? 4 : pt[i] == 3 ? 22 : pt[i] == 4 ? 0 : 12;
+            pvy[i] += g * dt; pvx[i] *= 1 - (pt[i] == 2 ? 1.5 : 0.8) * dt;
+            if (pt[i] == 2) { pvy[i] *= 1 - 1.2 * dt; px[i] += Math.Sin(pl[i] * 9 + i) * 6 * dt; }
             px[i] += pvx[i] * dt; py[i] += pvy[i] * dt;
+            if (pt[i] == 4) SpawnT(3, px[i], py[i] + 0.5, (rnd.NextDouble() - 0.5) * 3, 2, 0.25, Rgb(255, 200, 80));
+        }
+        // los cohetes que se acaban explotan
+        for (int k = 0; k < nBoom; k++)
+        {
+            int c = NEON[rnd.Next(NEON.Length)];
+            Burst(boomX[k], boomY[k], 45, 13, c);
+            for (int j = 0; j < 12; j++) SpawnT(3, boomX[k], boomY[k], (rnd.NextDouble() - 0.5) * 30, (rnd.NextDouble() - 0.5) * 12, 0.4, Rgb(255, 255, 255));
         }
     }
 
-    static void DrawParts()
+    // fire = true: solo el fuego (va detras del balon); false: todo lo demas
+    static void DrawParts(bool fire)
     {
         for (int i = 0; i < pn; i++)
         {
+            if ((pt[i] == 1) != fire) continue;
             double f = pl[i] / pm[i];
-            char c = f > 0.7 ? '*' : f > 0.4 ? '+' : f > 0.2 ? DOT : '.';
-            Put((int)Math.Floor(px[i]), (int)Math.Floor(py[i]), c, Scale(pc[i], 0.25 + 0.75 * f));
+            int x = (int)Math.Floor(px[i]), y = (int)Math.Floor(py[i]);
+            switch (pt[i])
+            {
+                case 1:
+                    Put(x, y, f > 0.75 ? '@' : f > 0.5 ? '*' : f > 0.3 ? '^' : '\'',
+                        f > 0.5 ? Lerp(Rgb(255, 110, 0), Rgb(255, 245, 140), (f - 0.5) * 2) : Lerp(Rgb(80, 10, 0), Rgb(255, 110, 0), f * 2));
+                    break;
+                case 2: Put(x, y, f < 0.15 ? '.' : pch[i], Scale(pc[i], 0.4 + 0.6 * Math.Min(1, f * 3))); break;
+                case 3: Put(x, y, f > 0.5 ? '*' : '.', Lerp(Rgb(255, 140, 20), Rgb(255, 255, 220), f)); break;
+                case 4: Put(x, y, '|', Rgb(255, 255, 200)); Put(x, y - 1, '^', Rgb(255, 255, 255)); break;
+                default:
+                    Put(x, y, f > 0.7 ? '*' : f > 0.4 ? '+' : f > 0.2 ? DOT : '.', Scale(pc[i], 0.25 + 0.75 * f));
+                    break;
+            }
         }
+    }
+
+    // anillo en perspectiva (onda expansiva)
+    static void Ring(double cx, double cy, double rx, double ry, char c, int col)
+    {
+        int n = (int)(rx * 7) + 12;
+        for (int k = 0; k < n; k++)
+        {
+            double a = Math.PI * 2 * k / n;
+            Put(Rd(cx + rx * Math.Cos(a) - 0.5), Rd(cy + ry * Math.Sin(a) - 0.5), c, col);
+        }
+    }
+
+    // mueve toda la imagen (temblor de pantalla)
+    static void ShiftAll(int dx, int dy)
+    {
+        if (dx == 0 && dy == 0) return;
+        char[] c2 = (char[])cb.Clone(); int[] f2 = (int[])cc.Clone(), b2 = (int[])cbg.Clone();
+        for (int y = 0; y < H; y++)
+            for (int x = 0; x < W; x++)
+            {
+                int i = y * W + x, sx = x - dx, sy = y - dy;
+                if (sx >= 0 && sy >= 0 && sx < W && sy < H) { int j = sy * W + sx; cb[i] = c2[j]; cc[i] = f2[j]; cbg[i] = b2[j]; }
+                else { cb[i] = ' '; cbg[i] = -1; }
+            }
     }
 
     // ================================================================ efectos
@@ -663,10 +720,12 @@ public static class GentzaneShow
         for (int x = hcx; x <= hcx + 10; x++) PutB(x, gH, x == hcx || x == hcx + 10 ? '/' : '_', a, Rgb(40, 42, 50));
     }
 
+    static double boardFlash;
+
     static void DrawBoard()
     {
         int bw = 34, bx = hcx - 18, by = bdy;
-        int frame = Rgb(225, 232, 245), side = Rgb(120, 128, 145), sideBg = Rgb(26, 28, 36), glass = Rgb(8, 14, 24), streak = Rgb(55, 105, 135), topBg = Rgb(38, 42, 54);
+        int frame = Lerp(Rgb(225, 232, 245), Rgb(255, 215, 60), boardFlash), side = Rgb(120, 128, 145), sideBg = Rgb(26, 28, 36), glass = Rgb(8, 14, 24), streak = Rgb(55, 105, 135), topBg = Rgb(38, 42, 54);
         for (int x = bx + 3; x <= bx + bw + 1; x++) Put(x, by, '_', frame);
         Put(bx + 2, by + 1, '/', frame);
         for (int x = bx + 3; x <= bx + bw; x++) PutB(x, by + 1, ' ', frame, topBg);
@@ -688,7 +747,7 @@ public static class GentzaneShow
         for (int x = bx + 2; x <= bx + bw - 1; x++) PutB(x, bot, '_', frame, glass);
         Put(bx + bw, bot, '|', frame); Put(bx + bw + 1, bot, '/', frame);
         // cuadrado del tablero
-        int sqc = Rgb(255, 90, 40), l = hcx - 8, r = hcx + 7;
+        int sqc = Lerp(Rgb(255, 90, 40), Rgb(255, 255, 160), boardFlash), l = hcx - 8, r = hcx + 7;
         for (int x = l + 1; x < r; x++) { Put(x, bot - 4, '_', sqc); Put(x, bot - 1, '_', sqc); }
         for (int y = bot - 3; y <= bot - 1; y++) { Put(l, y, '|', sqc); Put(r, y, '|', sqc); }
         // soporte del aro
@@ -743,10 +802,13 @@ public static class GentzaneShow
 
         double bx, by, R, rot, d;
         int ph = BallAt(s, out bx, out by, out R, out rot, out d);
-        double tSw = T_SHOT + ftf;
+        double tSw = T_SHOT + ftf, eS = s - tSw;
         double flash = (s > tSw && s < tSw + 0.25) ? 1 - (s - tSw) / 0.25 : 0;
+        boardFlash = eS > 0 && eS < 0.8 ? (1 - eS / 0.8) * (0.6 + 0.4 * Math.Sin(eS * 40)) : 0;
+        if (eS > 0 && eS < 0.3) bg = Lerp(Rgb(90, 70, 0), 0, eS / 0.3);
+        netRainbow = eS > 0 && eS < 1.2 ? eS : -1;
         int rimF = Lerp(Rgb(255, 100, 30), Rgb(255, 255, 255), flash), rimB = Lerp(Rgb(165, 55, 20), Rgb(255, 230, 200), flash);
-        int netC = Lerp(Rgb(215, 215, 228), Rgb(255, 255, 255), flash);
+        int netC = netRainbow >= 0 ? Neon(netRainbow * 2) : Lerp(Rgb(215, 215, 228), Rgb(255, 255, 255), flash);
 
         // red: se estira con el balon y luego se balancea
         int rows = netRows; double bulge = 0, sway = 0;
@@ -766,6 +828,13 @@ public static class GentzaneShow
         {
             double hgt = GAt(d) - (by + R);
             if (ph < 4 || d > -0.2) BallShadow(bx, (int)Math.Round(GAt(d)), R, hgt);
+            // estela de fuego del balon
+            if (ph == 2 || (ph == 3 && by < netTop))
+                for (int k = 0; k < 5; k++)
+                {
+                    double a = rnd.NextDouble() * Math.PI * 2, rr = Math.Sqrt(rnd.NextDouble()) * 0.9;
+                    SpawnT(1, bx + Math.Cos(a) * R * 2 * rr, by + Math.Sin(a) * R * rr, -fvx * 0.15 + (rnd.NextDouble() - 0.5) * 6, (rnd.NextDouble() - 0.5) * 3, 0.3 + rnd.NextDouble() * 0.35, 0);
+                }
             if (ph == 2)
                 for (int k = 6; k >= 1; k--)
                 {
@@ -775,9 +844,52 @@ public static class GentzaneShow
                     Put(Rd(tx), Rd(ty), k < 3 ? 'o' : DOT, Scale(Rgb(255, 120, 20), 0.9 - k * 0.12));
                 }
         }
+        DrawParts(true);
         if (ph >= 1 && !front) { RevealOn(2.8, 0, 0, 0.5, 3); Ball(bx, by, R, rot); RevealOff(); }
         if (hoop) { RevealOn(0.8, bdy, 0.07, 0.45, 7); DrawRimFront(rimF); DrawNet(rows, sway, by, bulge, netC); RevealOff(); }
         if (ph >= 1 && front) { RevealOn(2.8, 0, 0, 0.5, 3); Ball(bx, by, R, rot); RevealOff(); }
+
+        // ---- efectos de la canasta
+        if (eS >= 0 && fxStep == 0)
+        {
+            fxStep = 1;
+            for (int k = 0; k < 50; k++)
+            {
+                double a = Math.PI * 2 * rnd.NextDouble(), v = 8 + rnd.NextDouble() * 16;
+                SpawnT(3, hcx - 0.5 + Math.Cos(a) * rimA, rimY + Math.Sin(a) * 1.2, Math.Cos(a) * v * 2, Math.Sin(a) * v - 6, 0.5 + rnd.NextDouble() * 0.5, 0);
+            }
+            for (int side = -1; side <= 1; side += 2)
+                for (int k = 0; k < 55; k++)
+                    SpawnT(2, hcx - 0.5 + side * (rimA + 1), rimY, side * (4 + rnd.NextDouble() * 22), -(10 + rnd.NextDouble() * 16), 1.6 + rnd.NextDouble() * 1.2, NEON[rnd.Next(NEON.Length)]);
+        }
+        double[] rocketT = { 0.05, 0.3, 0.55, 0.8 };
+        double[] rocketX = { 0.12, 0.42, 0.62, 0.95 };
+        while (fxStep >= 1 && fxStep <= 4 && eS >= rocketT[fxStep - 1])
+        {
+            double sy0 = hz + 2, ty0 = 3 + rnd.Next(Math.Max(1, hz / 3)), v = 30;
+            SpawnT(4, W * rocketX[fxStep - 1], sy0, 0, -v, (sy0 - ty0) / v, 0);
+            fxStep++;
+        }
+        if (eS > 0 && eS < 1.0)
+        {
+            double r1 = eS * 50, r2 = (eS - 0.12) * 50;
+            Ring(hcx - 0.5, rimY, r1, r1 * 0.22, 'o', Lerp(Rgb(255, 255, 255), Rgb(0, 200, 255), eS));
+            if (r2 > 0) Ring(hcx - 0.5, rimY, r2, r2 * 0.22, DOT, Lerp(Rgb(255, 230, 120), Rgb(255, 0, 150), eS));
+        }
+        DrawParts(false);
+        // +2 que sube flotando
+        if (eS > 0 && eS < 1.6)
+        {
+            int c2 = Lerp(Rgb(255, 255, 255), Rgb(255, 210, 0), eS * 3);
+            if (eS > 1.2) c2 = Scale(c2, 1 - (eS - 1.2) / 0.4);
+            int px2 = hcx + rimA + 3, py2 = rimY - 2 - (int)(eS * 5);
+            for (int k = 0; k < 6; k++) Put(px2 + k, py2 + 2, FULL, c2);
+            for (int k = 0; k < 5; k++) { Put(px2 + 2, py2 + k, FULL, c2); Put(px2 + 3, py2 + k, FULL, c2); }
+            string[] dg2 = DIG[2].Split('|');
+            for (int r = 0; r < 5; r++)
+                for (int k = 0; k < 3; k++)
+                    if (dg2[r][k] == '#') { Put(px2 + 8 + k * 2, py2 + r, FULL, c2); Put(px2 + 9 + k * 2, py2 + r, FULL, c2); }
+        }
 
         // trayectoria calculada
         if (s > 4.8 && s < T_SHOT + 0.6)
@@ -804,12 +916,25 @@ public static class GentzaneShow
         {
             double e = s - tSw;
             int sx = hcx - 18 - SWISH[0].Length - 4, sy = bdy + 5;
-            int col = e < 0.2 ? Rgb(255, 255, 255) : Lerp(Rgb(255, 230, 0), Rgb(255, 80, 0), 0.5 + 0.5 * Math.Sin(e * 12));
-            if (e > 1.7) col = Scale(col, 1 - (e - 1.7) / 0.5);
-            for (int y = sy - 1; y <= sy + 6; y++)
-                for (int x = sx - 2; x < sx + SWISH[0].Length + 2; x++) Put(x, y, ' ', 0);
-            for (int i = 0; i < SWISH.Length; i++) TextT(sx, sy + i, SWISH[i], col);
-            TextT(sx + 1, sy + 5, "+2 PUNTOS // CANASTA LIMPIA", Lerp(Rgb(255, 255, 255), Rgb(0, 255, 150), e));
+            double fade = e > 1.7 ? 1 - (e - 1.7) / 0.5 : 1;
+            int sw = SWISH[0].Length; double half = sw / 2.0, open = Cl(e / 0.18);
+            for (int y = sy - 2; y <= sy + 6; y++)
+                for (int x = sx - 2; x < sx + sw + 2; x++) Put(x, y, ' ', 0);
+            for (int j = 0; j < sw; j++)
+            {
+                if (Math.Abs(j + 0.5 - half) > open * half + 0.5) continue;
+                int yo = e > 0.18 && e < 1.6 ? Rd(Math.Sin(e * 9) * 0.7) : 0;
+                int col = e < 0.2 ? Rgb(255, 255, 255) : Lerp(Neon(j * 0.025 - e * 1.2), Rgb(255, 255, 255), Math.Max(0, 0.5 - e));
+                col = Scale(col, fade);
+                for (int i = 0; i < SWISH.Length; i++)
+                    if (SWISH[i][j] != ' ') Put(sx + j, sy + i + yo, SWISH[i][j], col);
+            }
+            if (e > 0.25 && ((int)(e * 10)) % 2 == 0)
+            {
+                Put(sx - 2, sy - 1, '*', Rgb(255, 255, 160)); Put(sx + sw + 1, sy + 4, '*', Rgb(255, 255, 160));
+                Put(sx + sw + 1, sy - 1, '+', Rgb(255, 255, 255)); Put(sx - 2, sy + 4, '+', Rgb(255, 255, 255));
+            }
+            TextT(sx + 1, sy + 5, "+2 PUNTOS // CANASTA LIMPIA", Scale(Lerp(Rgb(255, 255, 255), Rgb(0, 255, 150), e), fade));
         }
 
         // registro de la izquierda
@@ -827,10 +952,36 @@ public static class GentzaneShow
         if (s > T_SHOT - 0.1 && s < tSw && ((int)(s * 6)) % 2 == 0) Text(2, 6, "> LANZANDO...", Rgb(255, 200, 0));
         if (s > tSw) Type(2, 6, "> resultado: CANASTA (+2)    ", tSw, 40, Rgb(0, 255, 150));
 
+        // marcador
+        if (s > 1.5 && W >= 100)
+        {
+            int score = eS < 0 ? 0 : eS < 0.35 ? rnd.Next(6) : 2;
+            double sf = eS > 0 && eS < 0.9 ? 1 - eS / 0.9 : 0;
+            RevealOn(1.5, 8, 0.05, 0.4, 19);
+            Scoreboard(2, 8, score, sf, s);
+            RevealOff();
+        }
+
+        if (eS > 0 && eS < 0.4)
+        {
+            double k = 1 - eS / 0.4;
+            ShiftAll(Rd(Math.Sin(eS * 120) * 2 * k), Rd(Math.Cos(eS * 97) * k));
+        }
+
         Hud("3D MODE");
 
-        // camara lenta al pasar por el aro
-        rate = ((ph == 2 && s > tSw - 0.12) || ph == 3) ? 0.3 : 1;
+        // camara lenta al pasar por el aro, con bandas de cine
+        rate = ((ph == 2 && s > tSw - 0.18) || ph == 3) ? 0.25 : 1;
+        cine += ((rate < 1 ? 1 : 0) - cine) * Math.Min(1, dt * 7);
+        int bars = Rd(cine * 3);
+        for (int y = 0; y < bars; y++)
+            for (int x = 0; x < W; x++) { PutB(x, y, ' ', 0, 0); PutB(x, H - 1 - y, ' ', 0, 0); }
+        if (bars >= 2)
+        {
+            Text(2, 0, ((int)(st * 3)) % 2 == 0 ? "(*) REC" : "( ) REC", Rgb(255, 50, 50));
+            string sm = "S L O W   M O T I O N   x0.25";
+            Text((W - sm.Length) / 2, H - 2, sm, Rgb(230, 230, 230));
+        }
         if (st < 0.4) Glitch((0.4 - st) * 2);
         // el balon "choca" contra la pantalla
         if (ph == 4 && R > H * 0.8 && crashT < 0) crashT = s;
@@ -841,6 +992,29 @@ public static class GentzaneShow
             Glitch(Math.Min(1, 0.4 + e * 2));
             if (e > 0.6) Goto(3);
         }
+    }
+
+    static double cine, netRainbow = -1; static int fxStep;
+
+    static void Scoreboard(int x, int y, int score, double flash, double t)
+    {
+        int w = 20, h = 8, fr2 = Rgb(0, 160, 200), led = Lerp(Rgb(255, 40, 40), Rgb(255, 255, 255), flash), off = Rgb(55, 8, 8);
+        for (int r = 0; r < h; r++)
+            for (int c = 0; c < w; c++)
+            {
+                bool t0 = r == 0, b0 = r == h - 1, l0 = c == 0, r0 = c == w - 1;
+                char ch = t0 && l0 ? '\u2554' : t0 && r0 ? '\u2557' : b0 && l0 ? '\u255a' : b0 && r0 ? '\u255d' : t0 || b0 ? '\u2550' : l0 || r0 ? '\u2551' : ' ';
+                PutB(x + c, y + r, ch, fr2, Rgb(4, 6, 12));
+            }
+        Text(x + 5, y, " MARCADOR ", Rgb(0, 230, 255));
+        string[] d0 = DIG[0].Split('|'), d1 = DIG[Math.Min(5, score)].Split('|');
+        for (int r = 0; r < 5; r++)
+            for (int k = 0; k < 3; k++)
+            {
+                int c0 = d0[r][k] == '#' ? led : off, c1 = d1[r][k] == '#' ? led : off;
+                Put(x + 3 + k * 2, y + 2 + r, FULL, c0); Put(x + 4 + k * 2, y + 2 + r, FULL, c0);
+                Put(x + 11 + k * 2, y + 2 + r, FULL, c1); Put(x + 12 + k * 2, y + 2 + r, FULL, c1);
+            }
     }
 
     // ================================================================ ESCENA 3: HOLA GENTZANE
@@ -941,7 +1115,7 @@ public static class GentzaneShow
             if (rnd.Next(3) == 0) bx = rnd.Next(4, W - 4);
             Burst(bx, 2 + rnd.Next(Math.Max(1, fz - 6)), 28, 9, NEON[rnd.Next(NEON.Length)]);
         }
-        DrawParts();
+        DrawParts(false);
 
         // balon botando sobre las letras de HOLA
         int flash = -1; double flashAmt = 0;
