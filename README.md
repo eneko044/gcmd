@@ -27,3 +27,16 @@ Juego de carreras de Formula 1 para el `cmd` de Windows. Doble clic en **`F1_GRA
 - Efectos: chispas, humo de neumaticos, tierra al salirte, temblor de camara, lineas de velocidad y turbo ERS.
 
 **Controles:** flechas arriba/abajo para acelerar y frenar, izquierda/derecha para girar, ESPACIO para el turbo ERS, P para pausar y ESC para salir.
+
+---
+
+# BASKET 1 VS 1
+
+Juego de baloncesto arcade 1 contra 1 para el `cmd` de Windows. Doble clic en **`BASKET_1VS1.bat`** (Windows 10/11).
+
+- Pista completa en vista lateral con parque brillante (reflejos), lineas de la cancha, publico animado que salta con las canastas, flashes, focos, pancartas, valla LED y marcador gigante.
+- Fisica real del balon: rebota en el aro, el tablero y el suelo; la red lo frena y ondea.
+- Tiro en suspension con barra de precision (suelta ESPACIO en la zona verde), triples, mates cerca del aro, tapones, robos, quiebros que pueden tirar al rival, turbo con resistencia y modo "en llamas" tras 3 canastas seguidas.
+- Reloj de partido (1, 2 o 3 minutos), reloj de posesion de 14 s, muerte subita si hay empate, 3 niveles de dificultad y estadisticas al final.
+
+**Controles:** flechas izquierda/derecha para moverte, arriba para saltar, ESPACIO para tirar/machacar o taponar, abajo para quiebro (con balon) o robo (en defensa), SHIFT para turbo, P pausa y ESC salir.
