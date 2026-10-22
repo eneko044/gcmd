@@ -77,7 +77,13 @@ public static class GentzaneShow
                 double t = sw.Elapsed.TotalSeconds;
                 double dt = Math.Min(0.1, t - last); last = t;
                 CheckSize();
-                if (Key()) { if (scene < 3) Goto(3); else if (st > 2.0) break; }
+                int k = Key();
+                if (k >= 0)
+                {
+                    if (scene < 3) Goto(3);
+                    else if (k == (int)ConsoleKey.Escape) break;
+                    else if (k == (int)ConsoleKey.Enter) Press();
+                }
                 Step(dt);
                 Present();
                 int ms = (int)((1.0 / 30 - (sw.Elapsed.TotalSeconds - t)) * 1000);
@@ -88,6 +94,8 @@ public static class GentzaneShow
     }
 
     // modo de prueba: simula la animacion y vuelca fotogramas a un fichero
+    public static double autoPress = -1;
+
     public static void Dump(int w, int h, string path, double[] times)
     {
         dumping = true; W = w; H = h; Alloc(); Goto(1);
@@ -96,6 +104,7 @@ public static class GentzaneShow
             double T = 0, dt = 1.0 / 30; int k = 0;
             while (k < times.Length)
             {
+                if (autoPress >= 0 && scene == 3 && st >= autoPress) Press();
                 Step(dt); T += dt;
                 if (T >= times[k])
                 {
@@ -142,10 +151,10 @@ public static class GentzaneShow
         if (hadMode) { try { SetConsoleMode(hOut, oldMode); } catch { } }
     }
 
-    static bool Key()
+    static int Key()
     {
-        try { if (Console.KeyAvailable) { Console.ReadKey(true); return true; } } catch { }
-        return false;
+        try { if (Console.KeyAvailable) return (int)Console.ReadKey(true).Key; } catch { }
+        return -1;
     }
 
     static void ReadSize()
@@ -172,7 +181,7 @@ public static class GentzaneShow
     static void Goto(int n)
     {
         scene = n; st = 0;
-        ps = 0; rate = 1; netExit = -1; crashT = -1; pn = 0; nextBurst = 2.0; lastHop = -1;
+        ps = 0; rate = 1; netExit = -1; crashT = -1; pn = 0; nextBurst = 2.0; lastHop = -1; pressT = -1; urlOpened = false;
     }
 
     static void Step(double dt)
@@ -961,14 +970,148 @@ public static class GentzaneShow
 
         string sub = ">> CANASTA PERFECTA  ::  +2 PUNTOS PARA GENTZANE <<";
         Type((W - sub.Length) / 2, subY, sub, 3.6, 32, Rgb(120, 255, 210));
-        if (t > 5.4 && ((int)(t * 2)) % 2 == 0)
+        if (t > BTN_T)
         {
-            string hint = "[ pulsa cualquier tecla para salir ]";
-            Text((W - hint.Length) / 2, H - 3, hint, Rgb(200, 190, 230));
+            int bw = BTN.Length + 12, bx = (W - bw) / 2 - 1, by = subY + 2;
+            double press = 0;
+            if (pressT >= 0)
+            {
+                double e = t - pressT;
+                press = e < 0.1 ? e / 0.1 : e < 0.45 ? 1 : 1 - Cl((e - 0.45) / 0.15);
+                if (e < 0.05 && lastBurst != pressT) { lastBurst = pressT; Burst(bx + bw / 2.0, by + 1, 60, 14, Rgb(0, 255, 140)); Burst(bx + bw / 2.0, by + 1, 30, 10, Rgb(255, 255, 255)); }
+            }
+            double bflash = pressT >= 0 && t - pressT < 0.25 ? 1 - (t - pressT) / 0.25 : 0;
+            RevealOn(BTN_T, by, 0.08, 0.45, 41);
+            Button3D(bx, by, bw, BTN, press, bflash, t);
+            RevealOff();
+            if (pressT < 0 && t > BTN_T + 0.8 && ((int)(t * 2)) % 2 == 0)
+            {
+                string hint = "[ ENTER: comenzar   |   ESC: salir ]";
+                Text((W - hint.Length) / 2, Math.Min(H - 3, by + 5), hint, Rgb(200, 190, 230));
+            }
         }
 
         Hud("ONLINE");
         if (t < 0.6) Glitch((0.6 - t) * 1.4);
+        if (pressT >= 0 && t > pressT + 0.6) Dialog(t - pressT - 0.6);
+    }
+
+    // ================================================================ boton 3D + ventana de aviso
+    const double BTN_T = 5.2;
+    const string BTN = "COMENZAR LA VALIDACI\u00d3N";
+    const string URL = "https://drive.google.com/drive/u/0/folders/1MrvRT9LkWErw4pDbmMoIXZZiJk9SVc9o";
+    static double pressT = -1, lastBurst = -2; static bool urlOpened;
+
+    static void Press()
+    {
+        if (scene == 3 && pressT < 0 && st > BTN_T + 0.3) pressT = st;
+    }
+
+    // boton con volumen: al pulsarlo la cara baja y tapa el lateral
+    static void Button3D(int x, int y, int w, string label, double press, double flash, double t)
+    {
+        int dpx = Rd((1 - press) * 2), dpy = press < 0.5 ? 1 : 0;
+        int fx = x + 2 - dpx, fy = y + 1 - dpy;
+        double pulse = pressT < 0 ? 0.5 + 0.5 * Math.Sin(t * 4) : 0;
+        for (int r = 0; r < 3; r++)
+            for (int c = 0; c < w; c++)
+                PutB(fx + dpx + c, fy + dpy + r, ' ', 0, r == 2 ? Rgb(0, 55, 32) : Rgb(0, 95, 55));
+        int top = Lerp(Rgb(110, 255, 175), Rgb(255, 255, 255), flash);
+        int mid = Lerp(Lerp(Rgb(0, 200, 110), Rgb(70, 255, 165), pulse), Rgb(255, 255, 255), flash);
+        int lo = Lerp(Rgb(0, 150, 85), Rgb(230, 255, 240), flash);
+        for (int r = 0; r < 3; r++)
+            for (int c = 0; c < w; c++)
+                PutB(fx + c, fy + r, r == 0 ? '\u2580' : ' ', Rgb(200, 255, 225), r == 0 ? top : r == 1 ? mid : lo);
+        int lx = fx + (w - label.Length) / 2;
+        for (int i = 0; i < label.Length; i++) PutB(lx + i, fy + 1, label[i], Rgb(0, 30, 15), mid);
+        if (pressT < 0)
+        {
+            int a = ((int)(t * 6)) % 3, g = Rgb(0, 255, 140);
+            Text(x - 6 + a, fy + 1, ">>", g);
+            Text(x + w + 6 - a, fy + 1, "<<", g);
+        }
+    }
+
+    static readonly string[] DIG = {
+        "###|# #|# #|# #|###", " # |## | # | # |###", "###|  #|###|#  |###",
+        "###|  #|###|  #|###", "# #|# #|###|  #|  #", "###|#  |###|  #|###" };
+
+    static void OpenUrl()
+    {
+        if (dumping) return;
+        try { Process.Start(new ProcessStartInfo("chrome", URL) { UseShellExecute = true }); return; } catch { }
+        try { Process.Start(URL); } catch { }
+    }
+
+    // ventana de aviso estilo Windows clasico con cuenta atras de 5 segundos
+    static void Dialog(double e)
+    {
+        for (int i = 0; i < cb.Length; i++) { cc[i] = Scale(cc[i], 0.3); cbg[i] = Scale(cbg[i] < 0 ? bg : cbg[i], 0.3); }
+        int dw = Math.Min(W - 4, 64), dh = 16;
+        double open = Sm(e / 0.25);
+        int cw = Math.Max(4, (int)(dw * open)), ch = Math.Max(3, (int)(dh * open));
+        int dx = (W - cw) / 2, dy = Math.Max(1, (H - ch) / 2);
+        int grey = Rgb(192, 192, 192), lite = Rgb(255, 255, 255), dark = Rgb(64, 64, 64), blk = Rgb(0, 0, 0);
+        for (int y = dy + 1; y <= dy + ch; y++) for (int x = dx + 2; x <= dx + cw + 1; x++) Shade(x, y, 0.35);
+        for (int y = dy; y < dy + ch; y++)
+            for (int x = dx; x < dx + cw; x++)
+            {
+                bool t0 = y == dy, b0 = y == dy + ch - 1, l0 = x == dx, r0 = x == dx + cw - 1;
+                char c = ' '; int col = blk;
+                if (t0 && l0) { c = '\u250c'; col = lite; } else if (t0 && r0) { c = '\u2510'; col = dark; }
+                else if (b0 && l0) { c = '\u2514'; col = lite; } else if (b0 && r0) { c = '\u2518'; col = dark; }
+                else if (t0) { c = '\u2500'; col = lite; } else if (b0) { c = '\u2500'; col = dark; }
+                else if (l0) { c = '\u2502'; col = lite; } else if (r0) { c = '\u2502'; col = dark; }
+                PutB(x, y, c, col, grey);
+            }
+        if (open < 1) return;
+
+        // barra de titulo
+        for (int x = dx + 1; x < dx + dw - 1; x++) PutB(x, dy + 1, ' ', lite, Lerp(Rgb(0, 0, 128), Rgb(16, 132, 208), (double)(x - dx) / dw));
+        Text(dx + 2, dy + 1, "/!\\ AVISO DEL SISTEMA - GENTZANE.EXE", lite);
+        string[] wb = { " _ ", "[ ]", " X " };
+        for (int i = 0; i < 3; i++) for (int k = 0; k < 3; k++) PutB(dx + dw - 12 + i * 4 + k, dy + 1, wb[i][k], blk, grey);
+
+        // icono de advertencia
+        int ix = dx + 3, iy = dy + 3, yel = Rgb(255, 205, 0);
+        for (int r = 0; r < 5; r++)
+        {
+            int l = ix + 4 - r, rr = ix + 5 + r;
+            Put(l, iy + r, r == 4 ? '/' : '/', Rgb(150, 110, 0)); Put(rr, iy + r, '\\', Rgb(150, 110, 0));
+            for (int x = l + 1; x < rr; x++) PutB(x, iy + r, r == 4 ? '_' : ' ', Rgb(150, 110, 0), yel);
+        }
+        Put(ix + 4, iy + 2, '!', blk); Put(ix + 5, iy + 2, '!', blk); Put(ix + 4, iy + 3, '.', blk); Put(ix + 5, iy + 3, '.', blk);
+
+        // textos
+        int rem = Math.Max(0, (int)Math.Ceiling(5 - e));
+        int tx = dx + 17;
+        string msg = "Se buena porfa :)";
+        for (int i = 0; i < msg.Length; i++)
+            Put(tx + i, dy + 4, msg[i], Lerp(Rgb(170, 0, 90), Rgb(230, 0, 60), 0.5 + 0.5 * Math.Sin(e * 6 - i * 0.5)));
+        if (((int)(e * 3)) % 2 == 0) Put(tx + msg.Length + 2, dy + 4, '\u2665', Rgb(220, 0, 40));
+        Text(tx, dy + 6, "Validacion de GENTZANE en curso...", blk);
+        Text(tx, dy + 7, "No cierres esta ventana.", dark);
+        Text(tx, dy + 9, rem > 0 ? "Redirigiendo a Google Drive en " + rem + " s" : "Abriendo Google Drive...  ", Rgb(0, 0, 128));
+
+        // numero grande de la cuenta atras
+        string[] dg = DIG[Math.Min(5, rem)].Split('|');
+        int nx = dx + dw - 10;
+        for (int r = 0; r < 5; r++)
+            for (int k = 0; k < 3; k++)
+                if (dg[r][k] == '#') { Put(nx + k * 2, dy + 3 + r, FULL, Rgb(200, 0, 0)); Put(nx + k * 2 + 1, dy + 3 + r, FULL, Rgb(200, 0, 0)); }
+
+        // barra de progreso por segmentos
+        int px0 = dx + 3, pw = dw - 6, fill = (int)(pw * Cl(e / 5));
+        for (int k = 0; k < pw; k++)
+            PutB(px0 + k, dy + 11, k < fill && k % 3 != 2 ? FULL : ' ', Rgb(0, 0, 128), lite);
+        Put(px0 - 1, dy + 11, '\u2502', dark); Put(px0 + pw, dy + 11, '\u2502', lite);
+
+        // boton Aceptar
+        string ok = "[    Aceptar    ]";
+        Text(dx + (dw - ok.Length) / 2, dy + 13, ok, blk);
+
+        if (e >= 5 && !urlOpened) { urlOpened = true; OpenUrl(); }
+        if (e >= 6.5) quit = true;
     }
 }
 '@
