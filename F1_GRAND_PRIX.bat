@@ -170,8 +170,8 @@ public static class F1Game
     }
 
     // ================================================================ teclado
-    static bool kUp, kDown, kLeft, kRight, kBoost, kEnter, kEsc, kPause;
-    static bool pEnter = true, pEsc = true, pPause = true;
+    static bool kUp, kDown, kLeft, kRight, kBoost, kEnter, kEsc, kPause, kJoin;
+    static bool pEnter = true, pEsc = true, pPause = true, pJoin = true;
 
     static bool Down(int vk) { return (GetAsyncKeyState(vk) & 0x8000) != 0; }
 
@@ -183,18 +183,19 @@ public static class F1Game
             kEnter = (state == ST_TITLE && stT > 1.0) || (state == ST_LOBBY && LobbyHost() && stT > 2 && (LobbyIds().Count >= testN || stT > 15));
             return;
         }
-        bool en = false, es = false, pa = false;
+        bool en = false, es = false, pa = false, jo = false;
+        bool typing = state == ST_NAME || state == ST_JOIN;
         if (asyncKeys)
         {
             try
             {
                 kUp = Down(0x26); kDown = Down(0x28); kLeft = Down(0x25); kRight = Down(0x27); kBoost = Down(0x20);
-                en = Down(0x0D); es = Down(0x1B); pa = Down(0x50);
-                if (state != ST_NAME) FlushConsoleInputBuffer(hIn);
+                en = Down(0x0D); es = Down(0x1B); pa = Down(0x50); jo = Down(0x55);
+                if (!typing) FlushConsoleInputBuffer(hIn);
             }
             catch { asyncKeys = false; }
         }
-        if (!asyncKeys && state != ST_NAME)
+        if (!asyncKeys && !typing)
         {
             kUp = kDown = kLeft = kRight = kBoost = false;
             try
@@ -202,17 +203,17 @@ public static class F1Game
                 while (Console.KeyAvailable)
                 {
                     ConsoleKey k = Console.ReadKey(true).Key;
-                    if (k == ConsoleKey.Enter) en = true; else if (k == ConsoleKey.Escape) es = true; else if (k == ConsoleKey.P) pa = true;
+                    if (k == ConsoleKey.Enter) en = true; else if (k == ConsoleKey.Escape) es = true; else if (k == ConsoleKey.P) pa = true; else if (k == ConsoleKey.U) jo = true;
                     else if (k == ConsoleKey.UpArrow) kUp = true; else if (k == ConsoleKey.DownArrow) kDown = true;
                     else if (k == ConsoleKey.LeftArrow) kLeft = true; else if (k == ConsoleKey.RightArrow) kRight = true;
                     else if (k == ConsoleKey.Spacebar) kBoost = true;
                 }
             }
             catch { }
-            pEnter = pEsc = pPause = false;
+            pEnter = pEsc = pPause = pJoin = false;
         }
-        kEnter = en && !pEnter; kEsc = es && !pEsc; kPause = pa && !pPause;
-        pEnter = en; pEsc = es; pPause = pa;
+        kEnter = en && !pEnter; kEsc = es && !pEsc; kPause = pa && !pPause; kJoin = jo && !pJoin;
+        pEnter = en; pEsc = es; pPause = pa; pJoin = jo;
     }
 
     // ================================================================ utilidades
@@ -735,7 +736,7 @@ public static class F1Game
     }
 
     // ================================================================ estado de carrera
-    const int ST_TITLE = 0, ST_COUNT = 1, ST_RACE = 2, ST_FINISH = 3, ST_NAME = 4, ST_LOBBY = 5;
+    const int ST_TITLE = 0, ST_COUNT = 1, ST_RACE = 2, ST_FINISH = 3, ST_NAME = 4, ST_LOBBY = 5, ST_JOIN = 6;
     static int state; static double stT, raceT, lightsOutT; static bool paused;
     static double steerVis, energy = 1, rpm, thrVis, brkVis, shake, dist, crashCool, lastLapT = -1, bestLapT = -1;
     static bool boosting, onKerb, offRoad, braking; static int prevPos, finishPos;
@@ -902,11 +903,14 @@ public static class F1Game
     class Peer { public string name = "PILOTO"; public char st = 'T'; public double last; }
     const int PORT = 47777;
     static UdpClient udp; static List<IPEndPoint> targets = new List<IPEndPoint>();
-    static string netErr = "", myIp = "";
+    static string netErr = "", myIp = ""; static bool myIpGw;
     static long myId; static int curRace;
     static Dictionary<long, Peer> peers = new Dictionary<long, Peer>();
     static double helloT, carT, aiT, startT; static int startRepeat; static string startMsg = "";
     static bool testRT; static int testN = 2;
+    // equipos con los que hablamos directamente: el firewall deja entrar sus respuestas sin permisos de administrador
+    static List<IPEndPoint> uni = new List<IPEndPoint>(); static HashSet<string> myAddrs = new HashSet<string>(); static int myPort = PORT;
+    static string ipBuf = "";
 
     static void NetStart()
     {
@@ -918,14 +922,16 @@ public static class F1Game
         {
             udp = new UdpClient();
             udp.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-            udp.Client.Bind(new IPEndPoint(IPAddress.Any, string.IsNullOrEmpty(tp) ? PORT : int.Parse(tp)));
+            myPort = string.IsNullOrEmpty(tp) ? PORT : int.Parse(tp);
+            myAddrs.Add("127.0.0.1");
+            udp.Client.Bind(new IPEndPoint(IPAddress.Any, myPort));
             udp.EnableBroadcast = true;
             try { udp.Client.IOControl(-1744830452, new byte[] { 0, 0, 0, 0 }, null); } catch { }
         }
         catch { udp = null; netErr = "RED NO DISPONIBLE: se jugara sin conexion"; return; }
-        if (!string.IsNullOrEmpty(tpe))
+        if (!string.IsNullOrEmpty(tp))
         {
-            foreach (string q in tpe.Split(',')) targets.Add(new IPEndPoint(IPAddress.Loopback, int.Parse(q)));
+            if (!string.IsNullOrEmpty(tpe)) foreach (string q in tpe.Split(',')) AddUni(new IPEndPoint(IPAddress.Loopback, int.Parse(q)));
             myIp = "127.0.0.1";
             return;
         }
@@ -943,7 +949,9 @@ public static class F1Game
                         byte[] a = ua.Address.GetAddressBytes(), m = ua.IPv4Mask.GetAddressBytes(), b = new byte[4];
                         for (int k = 0; k < 4; k++) b[k] = (byte)(a[k] | ~m[k]);
                         targets.Add(new IPEndPoint(new IPAddress(b), PORT));
-                        if (myIp.Length == 0 && a[0] != 169) myIp = ua.Address.ToString();
+                        myAddrs.Add(ua.Address.ToString());
+                        bool gw = ni.GetIPProperties().GatewayAddresses.Count > 0;
+                        if (a[0] != 169 && (myIp.Length == 0 || (gw && !myIpGw))) { myIp = ua.Address.ToString(); myIpGw = gw; }
                     }
                     catch { }
                 }
@@ -957,13 +965,70 @@ public static class F1Game
         if (udp == null) return;
         byte[] b = Encoding.UTF8.GetBytes(msg);
         foreach (IPEndPoint ep in targets) { try { udp.Send(b, b.Length, ep); } catch { } }
+        foreach (IPEndPoint ep in uni) { try { udp.Send(b, b.Length, ep); } catch { } }
+    }
+
+    static void AddUni(IPEndPoint ep)
+    {
+        if (ep == null || ep.AddressFamily != AddressFamily.InterNetwork || ep.Port <= 0) return;
+        if (ep.Port == myPort && myAddrs.Contains(ep.Address.ToString())) return;
+        foreach (IPEndPoint u in uni) if (u.Port == ep.Port && u.Address.Equals(ep.Address)) return;
+        if (uni.Count < 24) uni.Add(ep);
+    }
+
+    static string KnownList()
+    {
+        StringBuilder b = new StringBuilder();
+        foreach (IPEndPoint u in uni) { if (b.Length > 0) b.Append(';'); b.Append(u.Address).Append(':').Append(u.Port); }
+        return b.ToString();
+    }
+
+    static string IpPath() { return Path.Combine(Path.GetDirectoryName(NamePath()), "ip.txt"); }
+    static string LoadIp() { try { return File.ReadAllText(IpPath()).Trim(); } catch { return ""; } }
+
+    static void IpInput()
+    {
+        try
+        {
+            while (Console.KeyAvailable)
+            {
+                ConsoleKeyInfo k = Console.ReadKey(true);
+                if (k.Key == ConsoleKey.Enter)
+                {
+                    IPAddress ip;
+                    if (IPAddress.TryParse(ipBuf.Trim(), out ip) && ip.AddressFamily == AddressFamily.InterNetwork)
+                    {
+                        AddUni(new IPEndPoint(ip, PORT)); helloT = 0;
+                        try { Directory.CreateDirectory(Path.GetDirectoryName(IpPath())); File.WriteAllText(IpPath(), ipBuf.Trim()); } catch { }
+                        Msg("CONECTANDO CON " + ipBuf.Trim() + "...", Rgb(0, 230, 255), 2.5);
+                        state = ST_LOBBY; stT = 0;
+                    }
+                    else Msg("CODIGO NO VALIDO (ejemplo: 192.168.1.23)", Rgb(255, 80, 60), 2.5);
+                    return;
+                }
+                else if (k.Key == ConsoleKey.Backspace) { if (ipBuf.Length > 0) ipBuf = ipBuf.Substring(0, ipBuf.Length - 1); }
+                else if ((char.IsDigit(k.KeyChar) || k.KeyChar == '.') && ipBuf.Length < 15) ipBuf += k.KeyChar;
+            }
+        }
+        catch { }
+    }
+
+    static void JoinText()
+    {
+        int y = Math.Max(10, H / 2 - 5);
+        TSC(y + 1, "UNIRSE A UN AMIGO", Rgb(0, 230, 255));
+        TSC(y + 2, "Escribe el codigo (IP) que sale en su sala", Rgb(180, 180, 195));
+        string shown = ipBuf + (((int)(gt * 3)) % 2 == 0 ? "_" : " ");
+        TS(W / 2 - 8, y + 4, shown, Rgb(255, 255, 255));
+        TSC(y + 6, "ENTER: CONECTAR     ESC: VOLVER", Rgb(230, 230, 240));
+        TSC(y + 7, "No hace falta ser administrador", Rgb(150, 155, 175));
     }
 
     static void NetBye() { if (udp != null) { NetSend("F1GP|BYE|" + myId); try { udp.Close(); } catch { } udp = null; } }
 
     static char StChar()
     {
-        switch (state) { case ST_NAME: return 'N'; case ST_LOBBY: return 'L'; case ST_COUNT: case ST_RACE: return 'R'; case ST_FINISH: return 'F'; default: return 'T'; }
+        switch (state) { case ST_NAME: return 'N'; case ST_LOBBY: case ST_JOIN: return 'L'; case ST_COUNT: case ST_RACE: return 'R'; case ST_FINISH: return 'F'; default: return 'T'; }
     }
 
     static string D(double v) { return v.ToString("0.###", INV); }
@@ -978,12 +1043,12 @@ public static class F1Game
             {
                 IPEndPoint ep = new IPEndPoint(IPAddress.Any, 0);
                 byte[] b = udp.Receive(ref ep);
-                Handle(Encoding.UTF8.GetString(b));
+                Handle(Encoding.UTF8.GetString(b), ep);
             }
         }
         catch { }
         helloT -= dt; carT -= dt; aiT -= dt; startT -= dt;
-        if (helloT <= 0) { helloT = state == ST_LOBBY ? 0.35 : 1.0; NetSend("F1GP|HELLO|" + myId + "|" + myName + "|" + StChar()); }
+        if (helloT <= 0) { helloT = state == ST_LOBBY ? 0.35 : 1.0; NetSend("F1GP|HELLO|" + myId + "|" + myName + "|" + StChar() + "|" + KnownList()); }
         if (startRepeat > 0 && startT <= 0) { startT = 0.12; startRepeat--; NetSend(startMsg); }
         bool racing = state == ST_COUNT || state == ST_RACE || state == ST_FINISH;
         if (racing && curRace != 0 && RemoteHumans() > 0)
@@ -1011,11 +1076,13 @@ public static class F1Game
         foreach (long id in dead) peers.Remove(id);
     }
 
-    static void Handle(string m)
+    static void Handle(string m, IPEndPoint from)
     {
         string[] p = m.Split('|');
         if (p.Length < 3 || p[0] != "F1GP") return;
         long id; if (!long.TryParse(p[2], out id) || id == myId) return;
+        // a quien nos escribe le contestamos directamente (asi se abre el firewall en los dos sentidos)
+        if (p[1] != "BYE") AddUni(new IPEndPoint(from.Address, from.Port));
         Peer pe;
         if (p[1] == "BYE") { peers.Remove(id); for (int i = 1; i < NCAR; i++) if (ckind[i] == 1 && cnid[i] == id) cgone[i] = true; return; }
         if (!peers.TryGetValue(id, out pe)) { pe = new Peer(); peers[id] = pe; }
@@ -1024,6 +1091,13 @@ public static class F1Game
         {
             case "HELLO":
                 if (p.Length >= 5) { string n = CleanName(p[3]); if (n.Length > 0) pe.name = n; if (p[4].Length > 0) pe.st = p[4][0]; }
+                // los equipos que conoce el otro: asi todos acaban conectados con todos
+                if (p.Length >= 6)
+                    foreach (string e in p[5].Split(';'))
+                    {
+                        int c = e.LastIndexOf(':'); IPAddress ip; int port;
+                        if (c > 0 && IPAddress.TryParse(e.Substring(0, c), out ip) && int.TryParse(e.Substring(c + 1), out port)) AddUni(new IPEndPoint(ip, port));
+                    }
                 break;
             case "START":
                 if (p.Length >= 6 && state == ST_LOBBY)
@@ -1153,7 +1227,7 @@ public static class F1Game
         int x = W / 2 - 32, wh = Rgb(255, 255, 255), gr = Rgb(150, 155, 175);
         TSC(2, "SALA ONLINE  -  RED LOCAL", Rgb(0, 230, 255));
         if (udp == null) TSC(3, netErr, Rgb(255, 90, 70));
-        else TSC(3, "Tu IP: " + (myIp.Length > 0 ? myIp : "?") + "     Puerto UDP " + PORT, gr);
+        else { string code = "TU CODIGO:  " + (myIp.Length > 0 ? myIp : "?"); TSC(3, code, Rgb(255, 255, 255)); }
         TS(x + 2, 5, "PILOTO          ESTADO", Rgb(255, 215, 0));
         List<long> ids = new List<long>(); ids.Add(myId);
         foreach (long k in peers.Keys) ids.Add(k);
@@ -1183,16 +1257,16 @@ public static class F1Game
             if (((int)(gt * 2.5)) % 2 == 0) TSC(fy + 2, ">>  ENTER: EMPEZAR LA CARRERA  <<", Rgb(255, 255, 255));
         }
         else TSC(fy + 2, "Esperando a que " + PeerName(lobby[0]) + " empiece la carrera...", Rgb(255, 215, 0));
-        TSC(fy + 4, "Abrid este mismo .bat en la misma red (WiFi o cable).", gr);
-        TSC(fy + 5, "Si no sale nadie: permite PowerShell en el Firewall.", gr);
-        TSC(fy + 6, "ESC: salir", gr);
+        TSC(fy + 4, "Para unirse: tus amigos pulsan U y escriben tu codigo.", gr);
+        TSC(fy + 5, "U: UNIRME A UN AMIGO (escribir su codigo)    ESC: salir", Rgb(0, 230, 255));
+        if (uni.Count > 0) TSC(fy + 6, "Conexiones directas: " + uni.Count, gr);
     }
 
     // ================================================================ bucle
     static void Frame(double dt)
     {
         gt += dt;
-        if (kEsc) { quit = true; return; }
+        if (kEsc) { if (state == ST_JOIN) { state = ST_LOBBY; stT = 0; } else { quit = true; return; } }
         NetTick(dt);
         if (kPause && state == ST_RACE)
         {
@@ -1222,6 +1296,11 @@ public static class F1Game
             case ST_LOBBY:
                 UpdatePlayer(dt, true, 0.95); UpdateAI(dt); SortOrder();
                 if (kEnter && LobbyHost()) HostStart();
+                else if (kJoin) { state = ST_JOIN; stT = 0; ipBuf = LoadIp(); }
+                break;
+            case ST_JOIN:
+                UpdatePlayer(dt, true, 0.95); UpdateAI(dt); SortOrder();
+                IpInput();
                 break;
             case ST_COUNT:
                 UpdatePlayer(dt, dumping, 1); UpdateAI(dt); SortOrder();
@@ -1738,6 +1817,7 @@ public static class F1Game
         if (state == ST_TITLE) TitlePix();
         else if (state == ST_NAME) NamePix();
         else if (state == ST_LOBBY) LobbyPix();
+        else if (state == ST_JOIN) NamePix();
         else if (state == ST_FINISH) { HudPix(false); FinishPix(); }
         else HudPix(true);
         if (state == ST_COUNT) CountPix();
@@ -1747,6 +1827,7 @@ public static class F1Game
         if (state == ST_TITLE) TitleText();
         else if (state == ST_NAME) NameText();
         else if (state == ST_LOBBY) LobbyText();
+        else if (state == ST_JOIN) JoinText();
         else { HudText(state != ST_FINISH); if (state == ST_FINISH) FinishText(); }
         if (state == ST_COUNT) CountText();
         if (paused) PauseText();
