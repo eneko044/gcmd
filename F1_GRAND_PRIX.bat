@@ -1,7 +1,7 @@
 <# : -------- parte BATCH (PowerShell la ve como un comentario) --------
 @echo off
 setlocal
-title F1 GRAND PRIX - Edicion Gentzane
+title F1 GRAND PRIX - Online LAN
 mode con: cols=120 lines=40
 color 0F
 cls
@@ -32,6 +32,9 @@ using System.Threading;
 using System.Diagnostics;
 using System.Globalization;
 using System.Collections.Generic;
+using System.Net;
+using System.Net.Sockets;
+using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 
 public static class F1Game
@@ -102,10 +105,11 @@ public static class F1Game
             while (k < times.Length && !quit)
             {
                 ReadInput(); Frame(dt); Present(); T += dt;
+                if (testRT) Thread.Sleep(33);
                 if (T >= times[k])
                 {
                     int pos = PosOf(0) + 1;
-                    o.WriteLine("F " + T.ToString("0.00", INV) + " state=" + state + " lap=" + claps[0] + " pos=" + pos + " kmh=" + (int)Kmh() + " x=" + cx[0].ToString("0.00", INV) + " race=" + raceT.ToString("0.0", INV) + " bytes=" + sb.Length);
+                    o.WriteLine("F " + T.ToString("0.00", INV) + " state=" + state + " lap=" + claps[0] + " pos=" + pos + " kmh=" + (int)Kmh() + " x=" + cx[0].ToString("0.00", INV) + " race=" + raceT.ToString("0.0", INV) + " bytes=" + sb.Length + " online=" + RemoteHumans() + " host=" + IsHost() + " peers=" + peers.Count);
                     for (int y = 0; y < H; y++) o.WriteLine(new string(cb, y * W, W));
                     for (int y = 0; y < H; y++)
                     {
@@ -138,6 +142,7 @@ public static class F1Game
 
     static void Restore()
     {
+        NetBye();
         Out(E + "0m" + E + "2J" + E + "H" + E + "?25h");
         try { Console.CursorVisible = true; } catch { }
         if (hadMode) { try { SetConsoleMode(hOut, oldMode); } catch { } }
@@ -175,7 +180,7 @@ public static class F1Game
         if (dumping)
         {
             kUp = kDown = kLeft = kRight = kBoost = kEsc = kPause = false;
-            kEnter = state == ST_TITLE && stT > 1.0;
+            kEnter = (state == ST_TITLE && stT > 1.0) || (state == ST_LOBBY && LobbyHost() && stT > 2 && (LobbyIds().Count >= testN || stT > 15));
             return;
         }
         bool en = false, es = false, pa = false;
@@ -185,11 +190,11 @@ public static class F1Game
             {
                 kUp = Down(0x26); kDown = Down(0x28); kLeft = Down(0x25); kRight = Down(0x27); kBoost = Down(0x20);
                 en = Down(0x0D); es = Down(0x1B); pa = Down(0x50);
-                FlushConsoleInputBuffer(hIn);
+                if (state != ST_NAME) FlushConsoleInputBuffer(hIn);
             }
             catch { asyncKeys = false; }
         }
-        if (!asyncKeys)
+        if (!asyncKeys && state != ST_NAME)
         {
             kUp = kDown = kLeft = kRight = kBoost = false;
             try
@@ -561,7 +566,7 @@ public static class F1Game
                         SP(sTires, k * 4 + x, row * 4 + y, inner ? Rgb(15, 15, 18) : (y == 1 || y == 2) ? band : Rgb(35, 35, 40));
                     }
         // vallas publicitarias
-        string[] txt = { "GENTZANE", "F1 GP", "TURBO", "GTZ #1", "VAMOS!", "ERS" };
+        string[] txt = { "F1 GP", "TURBO", "RACING", "SPEED", "VAMOS!", "ERS" };
         int[] bgs = { Rgb(200, 10, 30), Rgb(15, 25, 60), Rgb(255, 190, 0), Rgb(0, 150, 110), Rgb(110, 20, 160), Rgb(0, 90, 220) };
         int[] fgs = { Rgb(255, 255, 255), Rgb(255, 255, 255), Rgb(20, 20, 20), Rgb(255, 255, 255), Rgb(255, 230, 0), Rgb(255, 255, 255) };
         sBoards = new Sprite[txt.Length];
@@ -588,7 +593,7 @@ public static class F1Game
             for (int y = 23; y < 30; y++) SP(sStand, x, y, y == 29 ? Rgb(90, 90, 100) : Rgb(18, 20, 32));
         }
         foreach (int px0 in new int[] { 1, 35, 70 }) for (int y = 4; y < 23; y++) SP(sStand, px0, y, Rgb(150, 150, 160));
-        F3Spr(sStand, "GENTZANE", 36 - F3W("GENTZANE", 1) / 2, 24, Rgb(255, 255, 255));
+        F3Spr(sStand, "GRAND PRIX", 36 - F3W("GRAND PRIX", 1) / 2, 24, Rgb(255, 255, 255));
         // portico de salida con semaforo
         sGantry = new Sprite(100, 36, 5800);
         for (int y = 10; y < 36; y++)
@@ -596,7 +601,7 @@ public static class F1Game
         for (int y = 0; y < 12; y++)
             for (int x = 0; x < 100; x++)
                 SP(sGantry, x, y, y == 0 ? Rgb(220, 20, 30) : y == 11 ? (((x / 2) + (y / 2)) % 2 == 0 ? Rgb(240, 240, 240) : Rgb(10, 10, 10)) : Rgb(28, 28, 34));
-        F3Spr(sGantry, "GENTZANE GP", 50 - F3W("GENTZANE GP", 1) / 2, 1, Rgb(255, 255, 255));
+        F3Spr(sGantry, "GRAND PRIX", 50 - F3W("GRAND PRIX", 1) / 2, 1, Rgb(255, 255, 255));
         for (int k = 0; k < 5; k++)
         {
             int x0 = 50 - 24 + k * 10;
@@ -647,8 +652,14 @@ public static class F1Game
     static double[] cz = new double[NCAR], cx = new double[NCAR], cspd = new double[NCAR], ctop = new double[NCAR], cline = new double[NCAR];
     static double[] cdelay = new double[NCAR], cfin = new double[NCAR], cbest = new double[NCAR], clast = new double[NCAR];
     static int[] claps = new int[NCAR], cmain = new int[NCAR], csec = new int[NCAR], chelm = new int[NCAR]; static bool[] cbrk = new bool[NCAR];
-    static readonly string[] cname = { "GTZ", "ZAP", "NEO", "KOI", "RAY", "VEX", "ORB", "TAO" };
-    static readonly string[] cteam = { "GENTZANE RACING", "NEON MOTORS", "PAPAYA GP", "BLUE THUNDER", "VERDE RT", "ROSA RACING", "POLAR TEAM", "SOLAR GP" };
+    // indice 0 = este jugador; el resto son jugadores de la red (ckind 1) o pilotos IA (ckind 2)
+    static string[] cname = new string[NCAR], cfull = new string[NCAR], cteam = new string[NCAR];
+    static int[] ckind = new int[NCAR], cslot = new int[NCAR]; static long[] cnid = new long[NCAR]; static bool[] cgone = new bool[NCAR];
+    static double[] nProg = new double[NCAR], nX = new double[NCAR], nSpd = new double[NCAR], nTime = new double[NCAR];
+    static readonly string[] BOTN = { "ZAP", "NEO", "KOI", "RAY", "VEX", "ORB", "TAO", "LUX" };
+    static readonly string[] TEAMS = { "SCARLET RACING", "NEON MOTORS", "PAPAYA GP", "BLUE THUNDER", "VERDE RT", "ROSA RACING", "POLAR TEAM", "SOLAR GP" };
+    static readonly double[] TOPS = { 0.95, 0.94, 0.93, 0.92, 0.91, 0.9, 0.89, 0.88 };
+    static int[][] COLS;
     static int[] order = new int[NCAR];
 
     // coche visto desde detras (mitad izquierda; la derecha es simetrica)
@@ -668,7 +679,7 @@ public static class F1Game
             char[] a = CARL[r].ToCharArray(); Array.Reverse(a);
             CAR[r] = CARL[r] + new string(a);
         }
-        int[][] cols = {
+        COLS = new int[][] {
             new int[] { Rgb(225, 15, 25), Rgb(245, 245, 245), Rgb(255, 215, 0) },
             new int[] { Rgb(0, 200, 180), Rgb(30, 35, 40), Rgb(240, 240, 240) },
             new int[] { Rgb(255, 135, 0), Rgb(20, 25, 45), Rgb(0, 160, 255) },
@@ -677,8 +688,6 @@ public static class F1Game
             new int[] { Rgb(255, 90, 180), Rgb(30, 90, 220), Rgb(255, 255, 255) },
             new int[] { Rgb(235, 235, 245), Rgb(0, 110, 255), Rgb(255, 60, 60) },
             new int[] { Rgb(255, 210, 0), Rgb(25, 25, 25), Rgb(0, 200, 120) } };
-        double[] tops = { 1, 0.95, 0.935, 0.92, 0.91, 0.895, 0.885, 0.87 };
-        for (int i = 0; i < NCAR; i++) { cmain[i] = cols[i][0]; csec[i] = cols[i][1]; chelm[i] = cols[i][2]; ctop[i] = MAXSPD * tops[i]; }
     }
 
     static int CarCol(char ch, int ci, int v, double phase, bool brake, bool boostGlow)
@@ -726,7 +735,7 @@ public static class F1Game
     }
 
     // ================================================================ estado de carrera
-    const int ST_TITLE = 0, ST_COUNT = 1, ST_RACE = 2, ST_FINISH = 3;
+    const int ST_TITLE = 0, ST_COUNT = 1, ST_RACE = 2, ST_FINISH = 3, ST_NAME = 4, ST_LOBBY = 5;
     static int state; static double stT, raceT, lightsOutT; static bool paused;
     static double steerVis, energy = 1, rpm, thrVis, brkVis, shake, dist, crashCool, lastLapT = -1, bestLapT = -1;
     static bool boosting, onKerb, offRoad, braking; static int prevPos, finishPos;
@@ -736,29 +745,52 @@ public static class F1Game
     {
         InitFonts(); BuildTrack(); BuildSprites(); PlaceSprites(); BuildMap(); InitCars();
         for (int n = 0; n < DRAWD; n++) bucket[n] = new List<int>();
-        NewRace(); state = ST_TITLE; stT = 0;
+        LoadName(); NetStart();
+        NewRace(new long[] { myId }, rnd.Next()); state = ST_TITLE; stT = 0;
     }
 
     static void Msg(string s, int col, double dur) { msg = s; msgCol = col; msgT = gt; msgDur = dur; }
 
-    static void NewRace()
+    // reparte la parrilla: mismos huecos en todos los ordenadores gracias a la semilla compartida
+    static void NewRace(long[] humans, int seed)
     {
-        int[] grid = { 1, 2, 3, 4, 5, 0, 6, 7 };
-        for (int k = 0; k < NCAR; k++)
+        Random r = new Random(seed);
+        int[] perm = { 0, 1, 2, 3, 4, 5, 6, 7 };
+        for (int k = 7; k > 0; k--) { int j = r.Next(k + 1); int t = perm[k]; perm[k] = perm[j]; perm[j] = t; }
+        long[] slotHuman = new long[NCAR];
+        bool meIn = false;
+        for (int k = 0; k < humans.Length && k < NCAR; k++) { slotHuman[perm[k]] = humans[k]; if (humans[k] == myId) meIn = true; }
+        if (!meIn) slotHuman[perm[0]] = myId;
+        lightsOutT = 1.0 + 4 * 0.9 + 0.6 + r.NextDouble();
+        int next = 1;
+        for (int sl = 0; sl < NCAR; sl++)
         {
-            int c = grid[k];
-            cz[c] = trackLen - (3 + k * 4) * SEG; cx[c] = k % 2 == 0 ? -0.45 : 0.45;
+            long hid = slotHuman[sl];
+            int c = hid == myId ? 0 : next++;
+            cslot[c] = sl; cnid[c] = hid; ckind[c] = hid == myId ? 0 : hid != 0 ? 1 : 2; cgone[c] = false;
+            cmain[c] = COLS[sl][0]; csec[c] = COLS[sl][1]; chelm[c] = COLS[sl][2]; ctop[c] = MAXSPD * TOPS[sl];
+            cteam[c] = TEAMS[sl];
+            if (ckind[c] == 2) { cname[c] = BOTN[sl]; cfull[c] = BOTN[sl] + " (IA)"; }
+            else { string nm = c == 0 ? myName : PeerName(hid); cfull[c] = nm; cname[c] = Code(nm); }
+            cz[c] = trackLen - (3 + sl * 4) * SEG; cx[c] = sl % 2 == 0 ? -0.45 : 0.45;
             cspd[c] = 0; claps[c] = -1; cfin[c] = -1; cbest[c] = 1e9; clast[c] = 0;
-            cline[c] = (rnd.NextDouble() - 0.5) * 0.7; cdelay[c] = 0.15 + rnd.NextDouble() * 0.35; cbrk[c] = false;
+            cline[c] = (r.NextDouble() - 0.5) * 0.7; cdelay[c] = 0.15 + r.NextDouble() * 0.35; cbrk[c] = false;
+            nProg[c] = -1e12; nX[c] = cx[c]; nSpd[c] = 0; nTime[c] = -1;
         }
-        raceT = 0; energy = 1; shake = 0; pn = 0; lastLapT = -1; bestLapT = -1; prevPos = 5; paused = false; boosting = false;
+        raceT = 0; energy = 1; shake = 0; pn = 0; lastLapT = -1; bestLapT = -1; paused = false; boosting = false;
         msg = ""; crashCool = 0;
+        SortOrder(); prevPos = PosOf(0);
     }
 
-    static void StartCountdown()
+    static void StartCountdown(long[] humans, int seed, int raceId)
     {
-        NewRace(); state = ST_COUNT; stT = 0;
-        lightsOutT = 1.0 + 4 * 0.9 + 0.6 + rnd.NextDouble() * 1.0;
+        NewRace(humans, seed); curRace = raceId; state = ST_COUNT; stT = 0;
+    }
+
+    static void BackToLobby()
+    {
+        curRace = 0; state = ST_LOBBY; stT = 0;
+        NewRace(new long[] { myId }, rnd.Next());
     }
 
     static double Prog(int i) { return cfin[i] >= 0 ? 1e9 - cfin[i] : claps[i] * trackLen + cz[i]; }
@@ -808,12 +840,365 @@ public static class F1Game
         }
     }
 
+
+    // ================================================================ nombre del jugador
+    static string myName = "PILOTO", nameBuf = "";
+
+    static string NamePath() { return Path.Combine(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "F1GrandPrix"), "nombre.txt"); }
+
+    static void LoadName()
+    {
+        string t = Environment.GetEnvironmentVariable("F1_TEST_NAME");
+        if (!string.IsNullOrEmpty(t)) { myName = t; return; }
+        try { string n = CleanName(File.ReadAllText(NamePath())); if (n.Length > 0) myName = n; } catch { }
+    }
+
+    static string CleanName(string n)
+    {
+        StringBuilder b = new StringBuilder();
+        foreach (char ch in n.ToUpperInvariant())
+            if ((char.IsLetterOrDigit(ch) || ch == ' ' || ch == '-' || ch == '_') && b.Length < 12) b.Append(ch);
+        return b.ToString().Trim();
+    }
+
+    static string Code(string n)
+    {
+        StringBuilder b = new StringBuilder();
+        foreach (char ch in n) if (char.IsLetterOrDigit(ch)) { b.Append(char.ToUpperInvariant(ch)); if (b.Length == 3) break; }
+        while (b.Length < 3) b.Append('X');
+        return b.ToString();
+    }
+
+    static void NameInput()
+    {
+        if (dumping) { if (stT > 0.5) ConfirmName(); return; }
+        try
+        {
+            while (Console.KeyAvailable)
+            {
+                ConsoleKeyInfo k = Console.ReadKey(true);
+                if (k.Key == ConsoleKey.Enter) { if (CleanName(nameBuf).Length > 0) { ConfirmName(); return; } }
+                else if (k.Key == ConsoleKey.Backspace) { if (nameBuf.Length > 0) nameBuf = nameBuf.Substring(0, nameBuf.Length - 1); }
+                else
+                {
+                    char ch = char.ToUpperInvariant(k.KeyChar);
+                    if ((char.IsLetterOrDigit(ch) || ch == ' ' || ch == '-' || ch == '_') && nameBuf.Length < 12) nameBuf += ch;
+                }
+            }
+        }
+        catch { }
+    }
+
+    static void ConfirmName()
+    {
+        string n = CleanName(nameBuf);
+        if (n.Length > 0) myName = n;
+        if (!dumping) try { Directory.CreateDirectory(Path.GetDirectoryName(NamePath())); File.WriteAllText(NamePath(), myName); } catch { }
+        state = ST_LOBBY; stT = 0;
+        helloT = 0;
+    }
+
+    // ================================================================ red local (UDP broadcast)
+    class Peer { public string name = "PILOTO"; public char st = 'T'; public double last; }
+    const int PORT = 47777;
+    static UdpClient udp; static List<IPEndPoint> targets = new List<IPEndPoint>();
+    static string netErr = "", myIp = "";
+    static long myId; static int curRace;
+    static Dictionary<long, Peer> peers = new Dictionary<long, Peer>();
+    static double helloT, carT, aiT, startT; static int startRepeat; static string startMsg = "";
+    static bool testRT; static int testN = 2;
+
+    static void NetStart()
+    {
+        myId = BitConverter.ToInt64(Guid.NewGuid().ToByteArray(), 0) & 0x7FFFFFFFFFFFL;
+        string tp = Environment.GetEnvironmentVariable("F1_TEST_PORT"), tpe = Environment.GetEnvironmentVariable("F1_TEST_PEERS");
+        testRT = Environment.GetEnvironmentVariable("F1_TEST_RT") == "1";
+        string tn = Environment.GetEnvironmentVariable("F1_TEST_N"); if (!string.IsNullOrEmpty(tn)) testN = int.Parse(tn);
+        try
+        {
+            udp = new UdpClient();
+            udp.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            udp.Client.Bind(new IPEndPoint(IPAddress.Any, string.IsNullOrEmpty(tp) ? PORT : int.Parse(tp)));
+            udp.EnableBroadcast = true;
+            try { udp.Client.IOControl(-1744830452, new byte[] { 0, 0, 0, 0 }, null); } catch { }
+        }
+        catch { udp = null; netErr = "RED NO DISPONIBLE: se jugara sin conexion"; return; }
+        if (!string.IsNullOrEmpty(tpe))
+        {
+            foreach (string q in tpe.Split(',')) targets.Add(new IPEndPoint(IPAddress.Loopback, int.Parse(q)));
+            myIp = "127.0.0.1";
+            return;
+        }
+        targets.Add(new IPEndPoint(IPAddress.Broadcast, PORT));
+        try
+        {
+            foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (ni.OperationalStatus != OperationalStatus.Up || ni.NetworkInterfaceType == NetworkInterfaceType.Loopback) continue;
+                foreach (UnicastIPAddressInformation ua in ni.GetIPProperties().UnicastAddresses)
+                {
+                    try
+                    {
+                        if (ua.Address.AddressFamily != AddressFamily.InterNetwork || ua.IPv4Mask == null) continue;
+                        byte[] a = ua.Address.GetAddressBytes(), m = ua.IPv4Mask.GetAddressBytes(), b = new byte[4];
+                        for (int k = 0; k < 4; k++) b[k] = (byte)(a[k] | ~m[k]);
+                        targets.Add(new IPEndPoint(new IPAddress(b), PORT));
+                        if (myIp.Length == 0 && a[0] != 169) myIp = ua.Address.ToString();
+                    }
+                    catch { }
+                }
+            }
+        }
+        catch { }
+    }
+
+    static void NetSend(string msg)
+    {
+        if (udp == null) return;
+        byte[] b = Encoding.UTF8.GetBytes(msg);
+        foreach (IPEndPoint ep in targets) { try { udp.Send(b, b.Length, ep); } catch { } }
+    }
+
+    static void NetBye() { if (udp != null) { NetSend("F1GP|BYE|" + myId); try { udp.Close(); } catch { } udp = null; } }
+
+    static char StChar()
+    {
+        switch (state) { case ST_NAME: return 'N'; case ST_LOBBY: return 'L'; case ST_COUNT: case ST_RACE: return 'R'; case ST_FINISH: return 'F'; default: return 'T'; }
+    }
+
+    static string D(double v) { return v.ToString("0.###", INV); }
+    static double P(string s) { double v; double.TryParse(s, NumberStyles.Float, INV, out v); return v; }
+
+    static void NetTick(double dt)
+    {
+        if (udp == null) return;
+        try
+        {
+            while (udp.Available > 0)
+            {
+                IPEndPoint ep = new IPEndPoint(IPAddress.Any, 0);
+                byte[] b = udp.Receive(ref ep);
+                Handle(Encoding.UTF8.GetString(b));
+            }
+        }
+        catch { }
+        helloT -= dt; carT -= dt; aiT -= dt; startT -= dt;
+        if (helloT <= 0) { helloT = state == ST_LOBBY ? 0.35 : 1.0; NetSend("F1GP|HELLO|" + myId + "|" + myName + "|" + StChar()); }
+        if (startRepeat > 0 && startT <= 0) { startT = 0.12; startRepeat--; NetSend(startMsg); }
+        bool racing = state == ST_COUNT || state == ST_RACE || state == ST_FINISH;
+        if (racing && curRace != 0 && RemoteHumans() > 0)
+        {
+            if (carT <= 0)
+            {
+                carT = 0.05;
+                NetSend("F1GP|CAR|" + myId + "|" + curRace + "|" + D(cz[0]) + "|" + claps[0] + "|" + D(cx[0]) + "|" + D(cspd[0]) + "|" + ((braking ? 1 : 0) | (boosting ? 2 : 0)) + "|" + D(cfin[0]) + "|" + D(cbest[0]));
+            }
+            if (aiT <= 0 && IsHost())
+            {
+                aiT = 0.066;
+                StringBuilder a = new StringBuilder();
+                for (int i = 1; i < NCAR; i++)
+                {
+                    if (ckind[i] != 2) continue;
+                    if (a.Length > 0) a.Append(';');
+                    a.Append(cslot[i]).Append(':').Append(D(cz[i])).Append(':').Append(claps[i]).Append(':').Append(D(cx[i])).Append(':').Append(D(cspd[i])).Append(':').Append(cbrk[i] ? 1 : 0).Append(':').Append(D(cfin[i])).Append(':').Append(D(cbest[i]));
+                }
+                NetSend("F1GP|AI|" + myId + "|" + curRace + "|" + a);
+            }
+        }
+        List<long> dead = new List<long>();
+        foreach (KeyValuePair<long, Peer> kv in peers) if (gt - kv.Value.last > 6) dead.Add(kv.Key);
+        foreach (long id in dead) peers.Remove(id);
+    }
+
+    static void Handle(string m)
+    {
+        string[] p = m.Split('|');
+        if (p.Length < 3 || p[0] != "F1GP") return;
+        long id; if (!long.TryParse(p[2], out id) || id == myId) return;
+        Peer pe;
+        if (p[1] == "BYE") { peers.Remove(id); for (int i = 1; i < NCAR; i++) if (ckind[i] == 1 && cnid[i] == id) cgone[i] = true; return; }
+        if (!peers.TryGetValue(id, out pe)) { pe = new Peer(); peers[id] = pe; }
+        pe.last = gt;
+        switch (p[1])
+        {
+            case "HELLO":
+                if (p.Length >= 5) { string n = CleanName(p[3]); if (n.Length > 0) pe.name = n; if (p[4].Length > 0) pe.st = p[4][0]; }
+                break;
+            case "START":
+                if (p.Length >= 6 && state == ST_LOBBY)
+                {
+                    int race = (int)P(p[3]);
+                    List<long> ids = new List<long>();
+                    foreach (string q in p[5].Split(',')) { long v; if (long.TryParse(q, out v)) ids.Add(v); }
+                    if (race != curRace && ids.Contains(myId)) StartCountdown(ids.ToArray(), (int)P(p[4]), race);
+                }
+                break;
+            case "CAR":
+                if (p.Length >= 11 && (int)P(p[3]) == curRace)
+                    for (int i = 1; i < NCAR; i++)
+                        if (ckind[i] == 1 && cnid[i] == id)
+                        {
+                            nProg[i] = (int)P(p[5]) * trackLen + P(p[4]); nX[i] = P(p[6]); nSpd[i] = P(p[7]); nTime[i] = gt;
+                            int fl = (int)P(p[8]); cbrk[i] = (fl & 1) != 0;
+                            double f = P(p[9]); if (f >= 0) cfin[i] = f;
+                            cbest[i] = P(p[10]); cgone[i] = false;
+                        }
+                break;
+            case "AI":
+                if (p.Length >= 5 && (int)P(p[3]) == curRace && !IsHost())
+                    foreach (string e in p[4].Split(';'))
+                    {
+                        string[] f = e.Split(':');
+                        if (f.Length < 8) continue;
+                        int sl = (int)P(f[0]);
+                        for (int i = 1; i < NCAR; i++)
+                            if (ckind[i] == 2 && cslot[i] == sl)
+                            {
+                                nProg[i] = (int)P(f[2]) * trackLen + P(f[1]); nX[i] = P(f[3]); nSpd[i] = P(f[4]); nTime[i] = gt;
+                                cbrk[i] = f[5] == "1"; double fi = P(f[6]); if (fi >= 0) cfin[i] = fi; cbest[i] = P(f[7]);
+                            }
+                    }
+                break;
+        }
+    }
+
+    // los coches de otros ordenadores se mueven con lo ultimo recibido, prediciendo un poco hacia delante
+    static void NetDrive(int i, double dt)
+    {
+        if (cgone[i] || nTime[i] < 0) return;
+        double age = Math.Min(0.6, gt - nTime[i]);
+        double pred = nProg[i] + nSpd[i] * age;
+        int lp = (int)Math.Floor(pred / trackLen);
+        claps[i] = lp; cz[i] = pred - lp * trackLen;
+        cx[i] += (nX[i] - cx[i]) * Math.Min(1, dt * 12);
+        cspd[i] = nSpd[i];
+        if (ckind[i] == 1 && gt - nTime[i] > 5) cgone[i] = true;
+    }
+
+    static string PeerName(long id) { Peer pe; return peers.TryGetValue(id, out pe) ? pe.name : "PILOTO"; }
+
+    static int RemoteHumans() { int n = 0; for (int i = 1; i < NCAR; i++) if (ckind[i] == 1 && !cgone[i]) n++; return n; }
+
+    // el anfitrion (el de id mas bajo) es quien mueve a los pilotos IA para todos
+    static bool IsHost()
+    {
+        if (state != ST_COUNT && state != ST_RACE && state != ST_FINISH) return true;
+        for (int i = 1; i < NCAR; i++) if (ckind[i] == 1 && !cgone[i] && cnid[i] < myId) return false;
+        return true;
+    }
+
+    static double LeadHuman()
+    {
+        double m = Prog(0);
+        for (int i = 1; i < NCAR; i++) if (ckind[i] == 1 && !cgone[i]) m = Math.Max(m, Prog(i));
+        return m;
+    }
+
+    static List<long> LobbyIds()
+    {
+        List<long> l = new List<long>(); l.Add(myId);
+        foreach (KeyValuePair<long, Peer> kv in peers) if (kv.Value.st == 'L' && gt - kv.Value.last < 3) l.Add(kv.Key);
+        l.Sort();
+        return l;
+    }
+
+    static bool LobbyHost() { return LobbyIds()[0] == myId; }
+
+    static void HostStart()
+    {
+        List<long> ids = LobbyIds();
+        while (ids.Count > NCAR) ids.RemoveAt(ids.Count - 1);
+        int seed = rnd.Next(1, 1 << 30), race = rnd.Next(1, 1 << 30);
+        StringBuilder l = new StringBuilder();
+        foreach (long v in ids) { if (l.Length > 0) l.Append(','); l.Append(v); }
+        startMsg = "F1GP|START|" + myId + "|" + race + "|" + seed + "|" + l;
+        startRepeat = 8; startT = 0;
+        StartCountdown(ids.ToArray(), seed, race);
+    }
+
+    // ---------------------------------------------------------------- pantalla del nombre
+    static void NamePix()
+    {
+        for (int i = 0; i < pix.Length; i++) pix[i] = Lerp(pix[i], Rgb(5, 3, 15), 0.5);
+        int w = BigW("F1", 1);
+        BigPix("F1", (W - w) / 2, 2, 1, Rgb(255, 70, 50), Rgb(170, 0, 15), Rgb(90, 0, 10), Frac(gt / 3) * (w + 30) - 15);
+        int y = Math.Max(10, H / 2 - 5);
+        Panel(W / 2 - 25, y, 50, 9, 0.85, Rgb(225, 15, 25));
+        for (int py = (y + 4) * 2; py < (y + 5) * 2; py++) for (int px = W / 2 - 16; px < W / 2 + 16; px++) PB(px, py, Rgb(255, 255, 255), 0.12);
+    }
+
+    static void NameText()
+    {
+        int y = Math.Max(10, H / 2 - 5);
+        TSC(y + 1, "PILOTO, COMO TE LLAMAS?", Rgb(255, 215, 0));
+        TSC(y + 2, "Escribe tu nombre (maximo 12 letras)", Rgb(180, 180, 195));
+        string shown = nameBuf + (((int)(gt * 3)) % 2 == 0 ? "_" : " ");
+        TS(W / 2 - 15, y + 4, shown, Rgb(255, 255, 255));
+        TSC(y + 6, "ENTER: CONTINUAR     BORRAR: corregir", Rgb(230, 230, 240));
+        TSC(y + 7, "ESC: salir", Rgb(150, 155, 175));
+    }
+
+    // ---------------------------------------------------------------- sala online
+    static void LobbyPix()
+    {
+        for (int i = 0; i < pix.Length; i++) pix[i] = Lerp(pix[i], Rgb(5, 3, 15), 0.5);
+        int h = Math.Min(H - 3, 26);
+        Panel(W / 2 - 34, 1, 68, h, 0.85, Rgb(0, 200, 255));
+        Panel(W / 2 - 31, 6, 62, Math.Min(9, H - 15), 0.5, -1);
+    }
+
+    static void LobbyText()
+    {
+        int x = W / 2 - 32, wh = Rgb(255, 255, 255), gr = Rgb(150, 155, 175);
+        TSC(2, "SALA ONLINE  -  RED LOCAL", Rgb(0, 230, 255));
+        if (udp == null) TSC(3, netErr, Rgb(255, 90, 70));
+        else TSC(3, "Tu IP: " + (myIp.Length > 0 ? myIp : "?") + "     Puerto UDP " + PORT, gr);
+        TS(x + 2, 5, "PILOTO          ESTADO", Rgb(255, 215, 0));
+        List<long> ids = new List<long>(); ids.Add(myId);
+        foreach (long k in peers.Keys) ids.Add(k);
+        ids.Sort();
+        List<long> lobby = LobbyIds();
+        int row = 0, maxRows = Math.Min(9, H - 15);
+        foreach (long id in ids)
+        {
+            if (row >= maxRows) break;
+            bool me = id == myId;
+            Peer pe = null; if (!me) peers.TryGetValue(id, out pe);
+            char st = me ? 'L' : pe.st;
+            string nm = me ? myName : pe.name;
+            string stt = st == 'L' ? "EN LA SALA" : st == 'R' ? "CORRIENDO" : st == 'F' ? "EN META" : "EN EL MENU";
+            int sc = st == 'L' ? Rgb(0, 255, 120) : st == 'R' || st == 'F' ? Rgb(255, 170, 0) : gr;
+            int y = 6 + row;
+            TS(x + 2, y, (me ? "\u25ba " : "  ") + nm, me ? Rgb(255, 230, 0) : wh);
+            TS(x + 18, y, stt, sc);
+            if (lobby[0] == id) TS(x + 31, y, "ANFITRION", Rgb(255, 215, 0));
+            if (me) TS(x + 42, y, "(TU)", Rgb(255, 230, 0));
+            row++;
+        }
+        int fy = 6 + maxRows + 1;
+        TSC(fy, "En la sala: " + lobby.Count + "/" + NCAR + "  (el resto seran pilotos IA)", wh);
+        if (LobbyHost())
+        {
+            if (((int)(gt * 2.5)) % 2 == 0) TSC(fy + 2, ">>  ENTER: EMPEZAR LA CARRERA  <<", Rgb(255, 255, 255));
+        }
+        else TSC(fy + 2, "Esperando a que " + PeerName(lobby[0]) + " empiece la carrera...", Rgb(255, 215, 0));
+        TSC(fy + 4, "Abrid este mismo .bat en la misma red (WiFi o cable).", gr);
+        TSC(fy + 5, "Si no sale nadie: permite PowerShell en el Firewall.", gr);
+        TSC(fy + 6, "ESC: salir", gr);
+    }
+
     // ================================================================ bucle
     static void Frame(double dt)
     {
         gt += dt;
         if (kEsc) { quit = true; return; }
-        if (kPause && state == ST_RACE) paused = !paused;
+        NetTick(dt);
+        if (kPause && state == ST_RACE)
+        {
+            if (RemoteHumans() > 0) Msg("EN ONLINE NO SE PUEDE PAUSAR", Rgb(255, 200, 0), 1.5);
+            else paused = !paused;
+        }
         if (!paused) Update(dt);
         Render();
     }
@@ -828,7 +1213,15 @@ public static class F1Game
         {
             case ST_TITLE:
                 UpdatePlayer(dt, true, 0.95); UpdateAI(dt); SortOrder();
-                if (kEnter) StartCountdown();
+                if (kEnter) { state = ST_NAME; stT = 0; nameBuf = myName == "PILOTO" ? "" : myName; }
+                break;
+            case ST_NAME:
+                UpdatePlayer(dt, true, 0.95); UpdateAI(dt); SortOrder();
+                NameInput();
+                break;
+            case ST_LOBBY:
+                UpdatePlayer(dt, true, 0.95); UpdateAI(dt); SortOrder();
+                if (kEnter && LobbyHost()) HostStart();
                 break;
             case ST_COUNT:
                 UpdatePlayer(dt, dumping, 1); UpdateAI(dt); SortOrder();
@@ -850,7 +1243,7 @@ public static class F1Game
                 UpdatePlayer(dt, true, 0.55); UpdateAI(dt); SortOrder();
                 if (finishPos <= 3 && Frac(stT / 0.7) < dt / 0.7)
                     PSpawn(6, PW * (0.1 + rnd.NextDouble() * 0.8), PH * 0.55, (rnd.NextDouble() - 0.5) * 10, -45 - rnd.NextDouble() * 15, 0.6 + rnd.NextDouble() * 0.3, Rgb(255, 255, 220), 1);
-                if (kEnter && stT > 1.5) StartCountdown();
+                if (kEnter && stT > 1.5) BackToLobby();
                 break;
         }
     }
@@ -935,13 +1328,13 @@ public static class F1Game
         for (int j = 1; j < NCAR; j++)
         {
             double dz = Wrapd(cz[j] - cz[0]), ddx = cx[j] - cx[0];
-            if (Math.Abs(ddx) >= 0.33) continue;
+            if (Math.Abs(ddx) >= 0.33 || cgone[j]) continue;
             if (dz > 0 && dz < 170 && cspd[0] > cspd[j])
             {
                 cspd[0] = cspd[j] * 0.82; cz[0] = Wrap(cz[j] - 170);
                 Bump();
             }
-            else if (dz <= 0 && dz > -170 && cspd[j] > cspd[0]) cspd[j] = cspd[0] * 0.9;
+            else if (dz <= 0 && dz > -170 && cspd[j] > cspd[0] && ckind[j] == 2 && IsHost()) cspd[j] = cspd[0] * 0.9;
         }
         cx[0] = Math.Max(-2.6, Math.Min(2.6, cx[0]));
         cspd[0] = Math.Max(0, cspd[0]);
@@ -989,8 +1382,10 @@ public static class F1Game
 
     static void UpdateAI(double dt)
     {
+        bool host = IsHost();
         for (int i = 1; i < NCAR; i++)
         {
+            if (ckind[i] == 1 || (ckind[i] == 2 && !host)) { NetDrive(i, dt); continue; }
             if (state == ST_COUNT) { cspd[i] = 0; continue; }
             if (state == ST_RACE && raceT < cdelay[i]) continue;
             int s = SegAt(cz[i]);
@@ -998,7 +1393,7 @@ public static class F1Game
             double tgt = ctop[i] * (1 - Math.Min(0.3, Math.Abs(ca) * 0.042));
             if (state == ST_RACE || state == ST_FINISH)
             {
-                double d = (Prog(i) - Prog(0)) / trackLen;
+                double d = (Prog(i) - LeadHuman()) / trackLen;
                 if (cfin[0] < 0) { if (d > 0) tgt *= 1 - Math.Min(0.07, d * 0.6); else tgt *= 1 + Math.Min(0.05, -d * 0.4); }
             }
             if (cfin[i] >= 0) tgt = ctop[i] * 0.5;
@@ -1240,7 +1635,7 @@ public static class F1Game
         for (int c = 1; c < NCAR; c++)
         {
             int n = (SegAt(cz[c]) - baseSeg + NSeg) % NSeg;
-            if (n >= 1 && n < DRAWD) bucket[n].Add(c);
+            if (n >= 1 && n < DRAWD && !cgone[c]) bucket[n].Add(c);
         }
         for (int n = DRAWD - 1; n >= 1; n--)
         {
@@ -1341,6 +1736,8 @@ public static class F1Game
 
         // interfaz
         if (state == ST_TITLE) TitlePix();
+        else if (state == ST_NAME) NamePix();
+        else if (state == ST_LOBBY) LobbyPix();
         else if (state == ST_FINISH) { HudPix(false); FinishPix(); }
         else HudPix(true);
         if (state == ST_COUNT) CountPix();
@@ -1348,6 +1745,8 @@ public static class F1Game
         MsgPix();
         ToCells();
         if (state == ST_TITLE) TitleText();
+        else if (state == ST_NAME) NameText();
+        else if (state == ST_LOBBY) LobbyText();
         else { HudText(state != ST_FINISH); if (state == ST_FINISH) FinishText(); }
         if (state == ST_COUNT) CountText();
         if (paused) PauseText();
@@ -1470,9 +1869,11 @@ public static class F1Game
         for (int k = 0; k < NCAR; k++)
         {
             int c = order[k], y = 2 + k;
-            TS(2, y, (k + 1).ToString(), c == 0 ? Rgb(255, 230, 0) : wh);
-            TS(6, y, cname[c], c == 0 ? Rgb(255, 230, 0) : wh);
-            string g = Gap(k);
+            int nc = c == 0 ? Rgb(255, 230, 0) : ckind[c] == 1 ? Rgb(0, 230, 255) : wh;
+            if (cgone[c]) nc = Rgb(110, 110, 120);
+            TS(2, y, (k + 1).ToString(), nc);
+            TS(6, y, cname[c], nc);
+            string g = cgone[c] ? "DESC." : Gap(k);
             TS(21 - g.Length, y, g, k == 0 ? Rgb(0, 230, 255) : gr);
         }
         int tx = W - 25;
@@ -1480,7 +1881,9 @@ public static class F1Game
         TS(tx, 2, "VUELTA", gr); TS(tx + 9, 2, claps[0] >= 0 && state != ST_COUNT ? Fmt(raceT - clast[0]) : Fmt(0), wh);
         TS(tx, 3, "ULTIMA", gr); TS(tx + 9, 3, Fmt(lastLapT), wh);
         TS(tx, 4, "MEJOR", gr); TS(tx + 9, 4, Fmt(bestLapT), Rgb(200, 110, 255));
-        TS(W - 25, 7, "CIRCUITO GENTZANE", Rgb(0, 220, 255));
+        TS(W - 25, 7, "CIRCUITO", Rgb(0, 220, 255));
+        int on = RemoteHumans();
+        if (on > 0) TS(W / 2 - 9, 3, "ONLINE: " + (on + 1) + " JUGADORES", Rgb(0, 230, 255));
         TS(W / 2 - 4, 2, "RPM " + (int)(4000 + rpm * 11000), Rgb(150, 150, 165));
     }
 
@@ -1553,8 +1956,8 @@ public static class F1Game
     static void TitleText()
     {
         int gy = 1 + 6 * (H >= 38 ? 3 : 2) + 1, py = gy + 7;
-        TSC(py, "- EDICION GENTZANE  -  CIRCUITO GENTZANE  -  3 VUELTAS  -  8 PILOTOS -", Rgb(255, 210, 120));
-        if (((int)(gt * 2.5)) % 2 == 0) TSC(py + 1, ">>  PULSA ENTER PARA EMPEZAR  <<", Rgb(255, 255, 255));
+        TSC(py, "- MULTIJUGADOR EN RED LOCAL  -  3 VUELTAS  -  8 COCHES  -", Rgb(255, 210, 120));
+        if (((int)(gt * 2.5)) % 2 == 0) TSC(py + 1, ">>  PULSA ENTER PARA JUGAR  <<", Rgb(255, 255, 255));
         TSC(py + 4, "\u2191 ACELERAR     \u2193 FRENAR     \u2190 \u2192 GIRAR", Rgb(230, 230, 240));
         TSC(py + 5, "ESPACIO: TURBO ERS     P: PAUSA     ESC: SALIR", Rgb(230, 230, 240));
         TSC(py + 6, "Frena antes de las curvas cerradas o te iras a la hierba!", Rgb(150, 155, 175));
@@ -1609,21 +2012,21 @@ public static class F1Game
         if (stT <= 1.0) return;
         FinishOrder();
         int x = W / 2 - 32, y = 9;
-        TS(x + 1, y, "POS  PILOTO  EQUIPO              TIEMPO      MEJOR VUELTA", Rgb(255, 215, 0));
+        TS(x + 1, y, "POS  PILOTO        EQUIPO          TIEMPO      MEJOR", Rgb(255, 215, 0));
         for (int k = 0; k < NCAR; k++)
         {
-            int c = fin[k]; int col = c == 0 ? Rgb(255, 230, 0) : Rgb(235, 235, 245);
-            string t = cfin[c] >= 0 ? (k == 0 ? Fmt(cfin[c]) : "+" + (cfin[c] - cfin[fin[0]]).ToString("0.000", INV)) : "EN PISTA";
+            int c = fin[k]; int col = c == 0 ? Rgb(255, 230, 0) : ckind[c] == 1 ? Rgb(0, 230, 255) : Rgb(235, 235, 245);
+            string t = cfin[c] >= 0 ? (k == 0 ? Fmt(cfin[c]) : "+" + (cfin[c] - cfin[fin[0]]).ToString("0.000", INV)) : cgone[c] ? "ABANDONO" : "EN PISTA";
             TS(x + 2, y + 1 + k, (k + 1).ToString(), col);
             TC(x + 5, y + 1 + k, '\u2588', cmain[c]);
-            TS(x + 7, y + 1 + k, cname[c], col);
-            TS(x + 13, y + 1 + k, cteam[c], col);
-            TS(x + 33, y + 1 + k, t, col);
-            TS(x + 45, y + 1 + k, cbest[c] < 1e8 ? Fmt(cbest[c]) : "-", Rgb(200, 110, 255));
+            TS(x + 7, y + 1 + k, cfull[c].Length > 12 ? cfull[c].Substring(0, 12) : cfull[c], col);
+            TS(x + 21, y + 1 + k, cteam[c], col);
+            TS(x + 37, y + 1 + k, t, col);
+            TS(x + 49, y + 1 + k, cbest[c] < 1e8 ? Fmt(cbest[c]) : "-", Rgb(200, 110, 255));
         }
-        string res = finishPos == 1 ? "*** GENTZANE GANA EL GRAN PREMIO! ***" : finishPos <= 3 ? "*** PODIO PARA GENTZANE! ***" : "Buen intento! A por la victoria en la proxima.";
+        string res = finishPos == 1 ? "*** " + myName + " GANA EL GRAN PREMIO! ***" : finishPos <= 3 ? "*** PODIO PARA " + myName + "! ***" : "Buen intento, " + myName + "! A por la victoria en la proxima.";
         TSC(y + NCAR + 3, res, finishPos <= 3 ? Rgb(255, 215, 0) : Rgb(255, 255, 255));
-        if (((int)(gt * 2)) % 2 == 0) TSC(Math.Min(H - 11, y + NCAR + 5), "ENTER: OTRA CARRERA     ESC: SALIR", Rgb(255, 255, 255));
+        if (((int)(gt * 2)) % 2 == 0) TSC(Math.Min(H - 11, y + NCAR + 5), "ENTER: VOLVER A LA SALA     ESC: SALIR", Rgb(255, 255, 255));
     }
 }
 '@
