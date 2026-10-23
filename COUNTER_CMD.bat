@@ -669,7 +669,7 @@ public static class CounterCmd
                 pix[y * PW + x] = Lerp(c, HAZE, fog);
             }
             // suelo con texturas y sombras
-            for (int y = Math.Max(y1 + 1, hz + 1); y < PH; y++)
+            for (int y = Math.Max(0, Math.Max(y1 + 1, hz + 1)); y < PH; y++)
             {
                 double rd = camH * focal / (y + 0.5 - horizon);
                 double fx = camX + rx * rd, fy = camY + ry * rd;
