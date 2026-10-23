@@ -40,3 +40,17 @@ Juego de baloncesto arcade 1 contra 1 para el `cmd` de Windows. Doble clic en **
 - Reloj de partido (1, 2 o 3 minutos), reloj de posesion de 14 s, muerte subita si hay empate, 3 niveles de dificultad y estadisticas al final.
 
 **Controles:** flechas izquierda/derecha para moverte, arriba para saltar, ESPACIO para tirar/machacar o taponar, abajo para quiebro (con balon) o robo (en defensa), SHIFT para turbo, P pausa y ESC salir.
+
+---
+
+# CAMARA ASCII
+
+Convierte la webcam en un dibujo ASCII en tiempo real dentro del `cmd`. Doble clic en **`CAMARA_ASCII.bat`** (Windows 10/11). Usa Media Foundation, lo mismo que la app Camara de Windows: no hay que instalar nada.
+
+- 7 modos: ASCII detallado, ASCII en color, boceto a lapiz, Matrix, alta definicion (medios bloques a todo color), braille (en Windows Terminal) y neon (bordes).
+- Cada caracter se elige por **forma** (cada celda se divide en 2x4 zonas y se busca el caracter que mejor encaja), con niveles automaticos, enfoque y suavizado para que no parpadee.
+- En la consola clasica reduce la letra y agranda la ventana para tener muchas mas celdas; `+`/`-` cambian el nivel de detalle.
+
+**Teclas:** flechas izquierda/derecha (o 1-7) cambian de modo, arriba/abajo el contraste, RePag/AvPag el brillo, M espejo, V voltear, F foto congelada, S guardar el dibujo como .txt en el escritorio, K cambiar de camara, ESC salir.
+
+Si sale un aviso de privacidad: Configuracion > Privacidad > Camara > "Permitir que las aplicaciones de escritorio accedan a la camara".
