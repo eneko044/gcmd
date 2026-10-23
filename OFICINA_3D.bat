@@ -1223,7 +1223,7 @@ public static class Oficina
     static readonly V BTN_PC = new V(0.62f, 1.10f, 0.592f), SW_LAMP = new V(-0.62f, 0.788f, 0.815f), BTN_PR = new V(1.40f, 0.925f, 0.62f);
     static bool lampOn = true;
     static bool[] btnArm = { true, true, true };
-    static double btnPcT = -9, btnLampT = -9, btnPrT = -9, phoneT = -9, keyPressT = -9;
+    public static double btnPcT = -9, btnLampT = -9, btnPrT = -9, phoneT = -9, keyPressT = -9;
     static int keyPress = -1, keyHoverL = -1, keyHoverR = -1;
     static int binCount;
 
@@ -1406,7 +1406,7 @@ public static class Oficina
     static void ResetBodies()
     {
         bodies.Clear();
-        Body m = NewBody(K_MUG, new V(-0.4f, DESK + 0.05f, 0.43f), new V(0.042f, 0.05f, 0.042f), C3(200, 40, 40));
+        NewBody(K_MUG, new V(-0.4f, DESK + 0.05f, 0.43f), new V(0.042f, 0.05f, 0.042f), C3(200, 40, 40));
         for (int k = 0; k < 5; k++) { Body p = NewBody(K_PAPER, new V(-0.52f, DESK + 0.0012f + k * 0.0024f, 0.64f), new V(0.105f, 0.0011f, 0.1485f), new V(1, 1, 1)); p.yaw = (k - 2) * 0.04f; }
         Body ball = NewBody(K_BALL, new V(0.2f, DESK + 0.032f, 0.66f), new V(0.032f, 0.032f, 0.032f), C3(255, 120, 20)); ball.sphere = true; ball.r = 0.032f; ball.bounce = 0.7f;
         NewBody(K_MOUSE, new V(0.36f, DESK + 0.0175f, 0.46f), new V(0.031f, 0.0175f, 0.052f), new V(1, 1, 1));
@@ -1956,8 +1956,8 @@ public static class Oficina
     static Mesh mBtn, mLed; static Inst btnIns = new Inst(), ledIns = new Inst(), prLed = new Inst();
     // ================================================================ captura de la camara (hilo aparte)
     static volatile bool capRun = true;
-    static volatile int camReq = 0, camCur = -1, camCount = 0;
-    static volatile string camName = "", camErr = "", camRes = "";
+    public static volatile int camReq = 0, camCur = -1, camCount = 0;
+    public static volatile string camName = "", camErr = "", camRes = "";
     static readonly object fLock = new object();
     static byte[] shFrame; static int shLen, shW, shH, shStride; static volatile int shId;
 
@@ -2104,7 +2104,6 @@ public static class Oficina
     static int[] prevRGB = new int[GW * GH];
     static float[] bgY = new float[GW * GH], bgCr = new float[GW * GH], bgCb = new float[GW * GH];
     static bool bgOk; static int bgN;
-    static float skCr = 153, skCb = 102, skKr = 22, skKb = 26;
     static byte[] hm = new byte[GW * GH], sm = new byte[GW * GH], tmpM = new byte[GW * GH];
     static int[] lab = new int[GW * GH], qbuf = new int[GW * GH];
     static bool[] tkOk = new bool[2]; static float[] tkU = new float[2], tkV = new float[2], tkS = new float[2], tkPx = new float[2], tkPy = new float[2];
@@ -2471,7 +2470,6 @@ public static class Oficina
             }
             runs = Math.Max(runs, nRun);
         }
-        float thr = pr;
         int fingers = Math.Min(5, runs);
         fHist[h, fHi] = fingers;
         int[] cnt = new int[6]; for (int k = 0; k < 7; k++) cnt[fHist[h, k]]++;
