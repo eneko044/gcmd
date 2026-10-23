@@ -2129,6 +2129,7 @@ public static class Oficina
         return true;
     }
 
+    static double badT = -99;
     static bool camMirror = false;   // G: invertir izquierda/derecha
     static void FlipBg()
     {
@@ -2178,12 +2179,25 @@ public static class Oficina
             hm[i] = (byte)(skin && fg ? 1 : 0);
         }
         Morph(hm); Morph(sm);
+        if (bgOk)
+        {
+            int cov = 0;
+            for (int i = 0; i < GW * GH; i++)
+            {
+                if (hm[i] != 0) cov++;
+                if (sm[i] != 0) continue;
+                bgY[i] += (gY[i] - bgY[i]) * 0.04f; bgCr[i] += (gCr[i] - bgCr[i]) * 0.04f; bgCb[i] += (gCb[i] - bgCb[i]) * 0.04f;
+            }
+            if (cov > GW * GH * 0.3f && gt - badT > 6) { badT = gt; Msg("Detecto demasiada 'piel' en la imagen: pulsa C para recalibrar"); }
+        }
         // cabeza: la mancha de piel grande de la parte de arriba
         List<Blob> fb = Blobs(sm, 60);
         Blob face = null; float fscore = -1;
         foreach (Blob b in fb)
         {
-            if (b.cy > GH * 0.7f) continue;
+            if (b.cy > GH * 0.7f || b.area > GW * GH * 0.22f) continue;
+            int bw = b.x1 - b.x0 + 1, bh = b.y1 - b.y0 + 1;
+            if (bw > bh * 2.2f || bh > bw * 3) continue;
             float sc = b.area * (1.2f - Math.Abs(b.cx / GW - faceU)) * (1.3f - b.cy / GH);
             if (sc > fscore) { fscore = sc; face = b; }
         }
@@ -2198,10 +2212,13 @@ public static class Oficina
         List<Blob> cand = new List<Blob>();
         foreach (Blob b in hb)
         {
-            if (!bgOk && face != null)
+            if (b.area > GW * GH * 0.16f) continue;
+            if (face != null)
             {
                 int ox = Math.Min(b.x1, face.x1) - Math.Max(b.x0, face.x0), oy = Math.Min(b.y1, face.y1) - Math.Max(b.y0, face.y0);
-                if (ox > 0 && oy > 0 && ox * oy > 0.5f * (b.x1 - b.x0 + 1) * (b.y1 - b.y0 + 1)) continue;
+                if (ox > 0 && oy > 0 && ox * oy > 0.35f * (b.x1 - b.x0 + 1) * (b.y1 - b.y0 + 1)) continue;
+                float fw = face.x1 - face.x0 + 1, fh = face.y1 - face.y0 + 1;
+                if (Math.Abs(b.cx - face.cx) < fw * 0.6f && Math.Abs(b.cy - face.cy) < fh * 0.6f) continue;
             }
             cand.Add(b);
         }
@@ -2347,9 +2364,9 @@ public static class Oficina
         {
             if (tkOk[h] || gt - tkSeen[h] < 0.4)
             {
-                float x = (tkU[h] - 0.5f) * 1.6f;
+                float x = Clampf((tkU[h] - 0.5f) * 1.3f, -0.75f, 0.85f);
                 float y = 0.6f + Sat((0.98f - tkV[h]) / 0.78f) * 0.8f;
-                float z = Clampf(0.32f + (tkS[h] / handRef - 1) * 0.9f, -0.15f, 0.84f);
+                float z = Clampf(0.32f + (tkS[h] / handRef - 1) * 0.6f, 0.0f, 0.84f);
                 hTgt[h] = LerpV(hTgt[h], new V(x, y, z), (float)Math.Min(1, dt * 10));
                 hFingers[h] = tkF[h];
             }
@@ -2362,9 +2379,9 @@ public static class Oficina
         }
         if (faceOk)
         {
-            leanF = Lf(leanF, 0.1f + Clampf((faceS / face0S - 1) * 0.9f, -0.2f, 0.45f), 0.2f);
-            leanS = Lf(leanS, Clampf((faceU - face0U) * 1.2f, -0.35f, 0.35f), 0.2f);
-            headYaw = Lf(headYaw, Clampf((faceU - face0U) * 1.4f, -0.6f, 0.6f), 0.2f);
+            leanF = Lf(leanF, 0.1f + Clampf((faceS / face0S - 1) * 0.7f, -0.15f, 0.3f), 0.2f);
+            leanS = Lf(leanS, Clampf((faceU - face0U) * 1.0f, -0.22f, 0.22f), 0.2f);
+            headYaw = Lf(headYaw, Clampf((faceU - face0U) * 1.2f, -0.45f, 0.45f), 0.2f);
             headPitch = Lf(headPitch, -0.15f + Clampf((faceV - face0V) * 1.4f, -0.4f, 0.4f), 0.2f);
         }
     }
@@ -2386,7 +2403,7 @@ public static class Oficina
         skCr = cr[cr.Count / 2]; skCb = cbl[cbl.Count / 2];
         float madR = 0, madB = 0; foreach (int v in cr) madR += Math.Abs(v - skCr); foreach (int v in cbl) madB += Math.Abs(v - skCb);
         madR /= cr.Count; madB /= cbl.Count;
-        skKr = Clampf(madR * 3.2f, 8, 30); skKb = Clampf(madB * 3.2f, 8, 30);
+        skKr = Clampf(madR * 3.0f, 7, 20); skKb = Clampf(madB * 3.0f, 7, 20);
         handRef = Clampf((float)Math.Sqrt(cr.Count) / GW * 1.3f, 0.06f, 0.3f);
         if (faceOk) { face0U = faceU; face0V = faceV; face0S = faceS; }
         calStep = 0;
