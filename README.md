@@ -66,3 +66,14 @@ Un personaje sentado en su oficina, en 3D renderizado dentro de la consola (somb
 - Enciende el ordenador con el boton de la torre, escribe en NOTAS, coge el raton para mover el cursor (dejarlo quieto encima de un boton = clic), dibuja en PAINT, IMPRIMIR saca un folio por la impresora, el interruptor del flexo, arruga folios (mantenlos cogidos 1 s) y tiralos a la papelera...
 
 **Teclas:** T cambia entre camara y teclado (mano izq. A D W S Q E, Z puno, X dedo; mano der. J L I K U O, M puno, N dedo; flechas = inclinarse), C recalibrar, G invertir izquierda/derecha (si los brazos van al reves), TAB ver la camara, F1-F4 vistas, R recoger los objetos, H ayuda, +/- detalle, ESC salir.
+
+## COUNTER_CMD.bat
+
+Shooter tactico por equipos en 3D (raycasting con texturas, sombras del sol, cielo y soldados en pixel art) dentro de la consola. Terroristas contra antiterroristas en un mapa de desierto con zonas de bomba A y B, base de cada bando, medio, tuneles y "long".
+
+- **Tienda** al empezar cada ronda (B): Deagle, MP5, AK-47 / M4A1, AWP con mira, chaleco con casco y granada. Dinero por bajas, por plantar y por ganar o perder rondas.
+- **Bomba**: los terroristas la plantan en A o B (mantener E); los antiterroristas la desactivan (mantener E). Gana quien llegue a 8 rondas.
+- **Radar** giratorio, marcador (TAB), lista de bajas, punto de mira dinamico, retroceso, disparos a la cabeza, granadas y bots con IA que se reagrupan, atacan zonas y defienden.
+- **Online en red local** como el F1: sala con eleccion de bando, los huecos se rellenan con bots y se juega en tiempo real. Para unirse sin permisos de administrador: U y el codigo (IP) que sale en la sala del amigo.
+
+**Controles:** WASD moverse, raton apuntar (M lo activa/desactiva; tambien flechas), clic o ESPACIO disparar, clic derecho o Z mira del AWP, R recargar, CTRL agacharse, SHIFT andar, 1-5 armas, Q arma anterior, B tienda, E plantar/desactivar, TAB marcador, F1 ayuda, ESC pausa.
