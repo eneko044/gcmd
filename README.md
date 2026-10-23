@@ -59,6 +59,7 @@ Si sale un aviso de privacidad: Configuracion > Privacidad > Camara > "Permitir 
 
 Un personaje sentado en su oficina, en 3D renderizado dentro de la consola (sombras del sol por la ventana, flexo, brillo del monitor...). Hay mesa, ordenador, teclado, raton, taza, folios, impresora, papelera, planta, estanteria, reloj, cuadro y mas. Todo tiene colisiones y fisicas. Se controla con **tus manos y la webcam**:
 
+- Deteccion basada en las tecnicas clasicas de OpenCV: histograma de color de tu piel frente al del fondo (back projection), deteccion de movimiento por diferencia de fotogramas y seguimiento de cada mano con mean-shift/CamShift. Los dedos se cuentan con circulos alrededor de la palma.
 - Calibracion: al empezar, deja la camara sin manos y pulsa ESPACIO; despues pon las manos abiertas en el recuadro y pulsa ESPACIO.
 - Mueves la mano: se mueve la del personaje. Acercarla a la camara = mas lejos en la mesa. Inclinar la cabeza = el personaje se inclina.
 - Puno = coger, abrir la mano = soltar o lanzar (segun la velocidad). Un dedo = pulsar botones y teclear.

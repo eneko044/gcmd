@@ -2132,19 +2132,52 @@ public static class Oficina
 
     static double badT = -99;
     static bool camMirror = false;   // G: invertir izquierda/derecha
+    // Basado en las tecnicas clasicas de OpenCV:
+    //  - "back projection" de un histograma Cr/Cb de tu piel frente al del fondo (Jones & Rehg)
+    //  - deteccion de movimiento por diferencia de fotogramas (con memoria)
+    //  - seguimiento de cada mano con mean-shift / CamShift sobre el mapa de probabilidad
+    const int HB = 32;
+    static float[] skP = new float[HB * HB];
+    static bool skInit;
+    static float[] prob = new float[GW * GH], motion = new float[GW * GH];
+    static byte[] prevY = new byte[GW * GH];
+    static float[] wX = { 60, 130 }, wY = { 90, 90 }, wS = { 24, 24 };
+    static bool[] wOn = new bool[2];
+    static int[] wLost = new int[2];
+
+    static void DefaultSkin()
+    {
+        for (int a = 0; a < HB; a++)
+            for (int b = 0; b < HB; b++)
+            {
+                float u = (a * 8 + 4 - 153) / 16f, v = (b * 8 + 4 - 104) / 18f;
+                skP[a * HB + b] = (float)Math.Exp(-(u * u + v * v) * 1.2);
+            }
+    }
+
     static void FlipBg()
     {
         for (int y = 0; y < GH; y++)
             for (int x = 0; x < GW / 2; x++)
             {
-                int i = y * GW + x, j = y * GW + GW - 1 - x; float t;
+                int i = y * GW + x, j = y * GW + GW - 1 - x; float t; byte c;
                 t = bgY[i]; bgY[i] = bgY[j]; bgY[j] = t;
                 t = bgCr[i]; bgCr[i] = bgCr[j]; bgCr[j] = t;
                 t = bgCb[i]; bgCb[i] = bgCb[j]; bgCb[j] = t;
+                t = motion[i]; motion[i] = motion[j]; motion[j] = t;
+                c = prevY[i]; prevY[i] = prevY[j]; prevY[j] = c;
             }
+        for (int h = 0; h < 2; h++) { wX[h] = GW - 1 - wX[h]; wOn[h] = false; }
     }
+
+    static bool Fg(int i)
+    {
+        return !bgOk || Math.Abs(gY[i] - bgY[i]) > 20 || Math.Abs(gCr[i] - bgCr[i]) + Math.Abs(gCb[i] - bgCb[i]) > 12;
+    }
+
     static void TrackFrame()
     {
+        if (!skInit) { DefaultSkin(); skInit = true; }
         frameNo++;
         int st = Math.Abs(istride); bool bu = istride < 0;
         for (int y = 0; y < GH; y++)
@@ -2170,27 +2203,19 @@ public static class Oficina
             if (bgN >= 15) { for (int i = 0; i < GW * GH; i++) { bgY[i] /= bgN; bgCr[i] /= bgN; bgCb[i] /= bgN; } bgOk = true; calStep = 2; }
             return;
         }
-        // mascaras: piel (cabeza) y piel que no es fondo (manos)
+        // movimiento + probabilidad de piel + primer plano
         for (int i = 0; i < GW * GH; i++)
         {
-            float a = (gCr[i] - skCr) / skKr, b = (gCb[i] - skCb) / skKb;
-            bool skin = a * a + b * b <= 1 && gY[i] > 40;
-            sm[i] = (byte)(skin ? 1 : 0);
-            bool fg = !bgOk || Math.Abs(gY[i] - bgY[i]) > 22 || Math.Abs(gCr[i] - bgCr[i]) + Math.Abs(gCb[i] - bgCb[i]) > 14;
-            hm[i] = (byte)(skin && fg ? 1 : 0);
+            int d = Math.Abs(gY[i] - prevY[i]);
+            motion[i] = d > 16 ? 1f : motion[i] * 0.88f;
+            prevY[i] = gY[i];
+            float p = gY[i] < 35 ? 0 : skP[(gCr[i] >> 3) * HB + (gCb[i] >> 3)];
+            sm[i] = (byte)(p > 0.45f ? 1 : 0);
+            float hp = p * (Fg(i) ? 1f : 0.15f) * (0.75f + 0.25f * motion[i]);
+            prob[i] = hp;
+            hm[i] = (byte)(hp > 0.4f ? 1 : 0);
         }
         Morph(hm); Morph(sm);
-        if (bgOk)
-        {
-            int cov = 0;
-            for (int i = 0; i < GW * GH; i++)
-            {
-                if (hm[i] != 0) cov++;
-                if (sm[i] != 0) continue;
-                bgY[i] += (gY[i] - bgY[i]) * 0.04f; bgCr[i] += (gCr[i] - bgCr[i]) * 0.04f; bgCb[i] += (gCb[i] - bgCb[i]) * 0.04f;
-            }
-            if (cov > GW * GH * 0.3f && gt - badT > 6) { badT = gt; Msg("Detecto demasiada 'piel' en la imagen: pulsa C para recalibrar"); }
-        }
         // cabeza: la mancha de piel grande de la parte de arriba
         List<Blob> fb = Blobs(sm, 60);
         Blob face = null; float fscore = -1;
@@ -2199,7 +2224,9 @@ public static class Oficina
             if (b.cy > GH * 0.7f || b.area > GW * GH * 0.22f) continue;
             int bw = b.x1 - b.x0 + 1, bh = b.y1 - b.y0 + 1;
             if (bw > bh * 2.2f || bh > bw * 3) continue;
-            float sc = b.area * (1.2f - Math.Abs(b.cx / GW - faceU)) * (1.3f - b.cy / GH);
+            if (InHand(b.cx, b.cy, 1.0f)) continue;     // una mano no es la cara
+            float dx = b.cx / GW - faceU, dy = b.cy / GH - faceV;
+            float sc = b.area * (float)Math.Exp(-(dx * dx + dy * dy) / 0.03) * (1.3f - b.cy / GH);
             if (sc > fscore) { fscore = sc; face = b; }
         }
         faceOk = face != null;
@@ -2207,47 +2234,136 @@ public static class Oficina
         {
             faceU = Lf(faceU, face.cx / GW, 0.4f); faceV = Lf(faceV, face.cy / GH, 0.4f); faceS = Lf(faceS, (float)Math.Sqrt(face.area) / GW, 0.3f);
             faceX0 = face.x0; faceY0 = face.y0; faceX1 = face.x1; faceY1 = face.y1;
+            // la cara nunca es una mano
+            int fw = face.x1 - face.x0 + 1, fh = face.y1 - face.y0 + 1;
+            int ex0 = Math.Max(0, face.x0 - fw / 5), ex1 = Math.Min(GW - 1, face.x1 + fw / 5), ey0 = Math.Max(0, face.y0 - fh / 5), ey1 = Math.Min(GH - 1, face.y1 + fh / 6);
+            // y el cuello
+            for (int y = ey1; y <= Math.Min(GH - 1, face.y1 + fh * 2 / 3); y++) for (int x = Math.Max(0, (int)face.cx - fw / 3); x <= Math.Min(GW - 1, (int)face.cx + fw / 3); x++) { if (InHand(x, y, 1.3f)) continue; int i = y * GW + x; prob[i] = 0; hm[i] = 0; }
+            for (int y = ey0; y <= ey1; y++) for (int x = ex0; x <= ex1; x++) { if (InHand(x, y, 1.3f)) continue; int i = y * GW + x; prob[i] = 0; hm[i] = 0; }
         }
-        // manos
-        List<Blob> hb = Blobs(hm, 45);
-        List<Blob> cand = new List<Blob>();
-        foreach (Blob b in hb)
+        // el fondo se adapta a los cambios de luz (salvo donde hay piel o movimiento)
+        if (bgOk)
         {
-            if (b.area > GW * GH * 0.16f) continue;
-            float minA = Math.Max(110, handRef * GW * handRef * GW * 0.3f);
-            if (b.area < minA) continue;
-            if (face != null)
+            int cov = 0;
+            for (int i = 0; i < GW * GH; i++)
             {
-                int ox = Math.Min(b.x1, face.x1) - Math.Max(b.x0, face.x0), oy = Math.Min(b.y1, face.y1) - Math.Max(b.y0, face.y0);
-                if (ox > 0 && oy > 0 && ox * oy > 0.35f * (b.x1 - b.x0 + 1) * (b.y1 - b.y0 + 1)) continue;
-                float fw = face.x1 - face.x0 + 1, fh = face.y1 - face.y0 + 1;
-                if (Math.Abs(b.cx - face.cx) < fw * 0.6f && Math.Abs(b.cy - face.cy) < fh * 0.6f) continue;
+                if (hm[i] != 0) cov++;
+                if (motion[i] > 0.2f) continue;
+                // el fondo visible se adapta rapido a la luz; lo que lo tapa, muy despacio (sin "fantasmas")
+                float k = !Fg(i) ? 0.05f : sm[i] == 0 ? 0.002f : 0f;
+                if (k == 0) continue;
+                bgY[i] += (gY[i] - bgY[i]) * k; bgCr[i] += (gCr[i] - bgCr[i]) * k; bgCb[i] += (gCb[i] - bgCb[i]) * k;
             }
-            cand.Add(b);
+            if (cov > GW * GH * 0.3f && gt - badT > 6) { badT = gt; Msg("Detecto demasiada 'piel' en la imagen: pulsa C para recalibrar"); }
         }
-        cand.Sort(delegate(Blob p, Blob q) { return q.area.CompareTo(p.area); });
-        if (cand.Count > 2) cand.RemoveRange(2, cand.Count - 2);
+        List<Blob> hb = Blobs(hm, 30);
+        // 1) seguir las manos que ya tenemos
+        for (int h = 0; h < 2; h++) if (wOn[h]) MeanShift(h);
+        if (wOn[0] && wOn[1])
+        {
+            float dx = wX[0] - wX[1], dy = wY[0] - wY[1];
+            if (Math.Sqrt(dx * dx + dy * dy) < (wS[0] + wS[1]) * 0.4f) wOn[wLost[0] > wLost[1] ? 0 : 1] = false;
+            else if (wX[0] > wX[1] + 4) { float t = wX[0]; wX[0] = wX[1]; wX[1] = t; t = wY[0]; wY[0] = wY[1]; wY[1] = t; t = wS[0]; wS[0] = wS[1]; wS[1] = t; }
+        }
+        // 2) buscar manos nuevas: manchas de piel que se mueven
+        float minA = Math.Max(110, handRef * GW * handRef * GW * 0.3f);
+        if (!wOn[0] || !wOn[1])
+        {
+            hb.Sort(delegate(Blob p, Blob q) { return q.area.CompareTo(p.area); });
+            foreach (Blob b in hb)
+            {
+                if (wOn[0] && wOn[1]) break;
+                if (b.area < minA || b.area > GW * GH * 0.16f) continue;
+                bool taken = false;
+                for (int h = 0; h < 2; h++) if (wOn[h] && Math.Abs(b.cx - wX[h]) < wS[h] * 1.2f && Math.Abs(b.cy - wY[h]) < wS[h] * 1.5f) taken = true;
+                if (taken) continue;
+                if (faceOk && b.cy < face.y1 + (face.y1 - face.y0) * 0.6f && Math.Abs(b.cx - face.cx) < (face.x1 - face.x0 + 1) * 0.9f) continue;
+                // tiene que moverse para "engancharla"
+                float mv = 0; int mn = 0;
+                for (int y = b.y0; y <= b.y1; y += 2) for (int x = b.x0; x <= b.x1; x += 2) { int i = y * GW + x; if (lab[i] == b.id) { mv += motion[i]; mn++; } }
+                if (mn == 0 || mv / mn < 0.1f) continue;
+                int hh;
+                if (!wOn[0] && !wOn[1]) hh = b.cx < (faceOk ? face.cx : GW / 2f) ? 0 : 1;
+                else if (wOn[0]) { if (b.cx < wX[0]) continue; hh = 1; }
+                else { if (b.cx > wX[1]) continue; hh = 0; }
+                wOn[hh] = true; wX[hh] = b.cx; wY[hh] = b.cy; wS[hh] = Clampf((float)Math.Sqrt(b.area) * 0.85f, 10, 70); wLost[hh] = 0;
+                for (int k = 0; k < 7; k++) fHist[hh, k] = 5;
+            }
+        }
+        // 3) posicion, tamano y dedos de cada mano
         bool[] used = new bool[2];
-        if (cand.Count == 2)
+        for (int h = 0; h < 2; h++)
         {
-            Blob l = cand[0].cx < cand[1].cx ? cand[0] : cand[1], r = l == cand[0] ? cand[1] : cand[0];
-            HandFeat(0, l); HandFeat(1, r); used[0] = used[1] = true;
-        }
-        else if (cand.Count == 1)
-        {
-            float mid = faceOk ? faceU * GW : GW / 2f;
-            int h = cand[0].cx < mid ? 0 : 1;
-            HandFeat(h, cand[0]); used[h] = true;
+            if (!wOn[h]) continue;
+            Blob best = null; int bestN = 0;
+            int r = (int)wS[h];
+            int x0 = Math.Max(0, (int)(wX[h] - r * 1.4f)), x1 = Math.Min(GW - 1, (int)(wX[h] + r * 1.4f)), y0 = Math.Max(0, (int)(wY[h] - r * 1.8f)), y1 = Math.Min(GH - 1, (int)(wY[h] + r * 1.2f));
+            foreach (Blob b in hb)
+            {
+                if (b.x1 < x0 || b.x0 > x1 || b.y1 < y0 || b.y0 > y1) continue;
+                int n = 0;
+                for (int y = Math.Max(y0, b.y0); y <= Math.Min(y1, b.y1); y += 2) for (int x = Math.Max(x0, b.x0); x <= Math.Min(x1, b.x1); x += 2) if (lab[y * GW + x] == b.id) n++;
+                if (n > bestN) { bestN = n; best = b; }
+            }
+            if (best != null && bestN * 4 > 20)
+            {
+                Blob c = new Blob(); c.id = best.id; c.area = best.area;
+                c.x0 = Math.Max(x0, best.x0); c.x1 = Math.Min(x1, best.x1); c.y0 = Math.Max(y0, best.y0); c.y1 = Math.Min(y1, best.y1);
+                c.cx = wX[h]; c.cy = wY[h];
+                HandFeat(h, c);
+            }
+            else
+            {
+                tkU[h] = Lf(tkU[h], wX[h] / GW, 0.5f); tkV[h] = Lf(tkV[h], wY[h] / GH, 0.5f);
+                tkPx[h] = wX[h]; tkPy[h] = wY[h]; tkSeen[h] = gt;
+            }
+            used[h] = true;
         }
         fHi = (fHi + 1) % 7;
         for (int h = 0; h < 2; h++)
         {
             tkHits[h] = used[h] ? tkHits[h] + 1 : 0;
-            tkOk[h] = tkHits[h] >= 3;
+            tkOk[h] = tkHits[h] >= 2;
             if (tkOk[h]) tkGoodT[h] = gt;
         }
         if (tkOk[0] || tkOk[1]) noHandT = gt;
-        else if (calStep == 0 && gt - noHandT > 2.5 && gt - noHandMsgT > 8) { noHandMsgT = gt; Msg("No veo tus manos: levantalas delante del pecho, que salgan en la camara"); }
+        else if (calStep == 0 && gt - noHandT > 2.5 && gt - noHandMsgT > 8) { noHandMsgT = gt; Msg("No veo tus manos: levantalas delante del pecho y muevelas un poco"); }
+    }
+
+    static bool InHand(float x, float y, float k)
+    {
+        for (int h = 0; h < 2; h++) if (wOn[h] && Math.Abs(x - wX[h]) < wS[h] * k && Math.Abs(y - wY[h]) < wS[h] * k * 1.3f) return true;
+        return false;
+    }
+
+    // mean-shift: la ventana va hacia donde se concentra la probabilidad de "mano"
+    static void MeanShift(int h)
+    {
+        float m0 = 0; int cntN = 0;
+        for (int it = 0; it < 6; it++)
+        {
+            int r = (int)wS[h];
+            int x0 = Math.Max(0, (int)wX[h] - r), x1 = Math.Min(GW - 1, (int)wX[h] + r), y0 = Math.Max(0, (int)wY[h] - r), y1 = Math.Min(GH - 1, (int)wY[h] + r);
+            float sx = 0, sy = 0; m0 = 0; cntN = 0;
+            for (int y = y0; y <= y1; y++)
+            {
+                float wy = y < wY[h] ? 1f : 0.7f;   // el antebrazo no tira de la ventana
+                for (int x = x0; x <= x1; x++)
+                {
+                    float p = prob[y * GW + x];
+                    if (p < 0.2f) continue;
+                    cntN++; p *= wy; m0 += p; sx += p * x; sy += p * y;
+                }
+            }
+            if (m0 < 1) break;
+            float nx = sx / m0, ny = sy / m0;
+            bool done = Math.Abs(nx - wX[h]) < 0.5f && Math.Abs(ny - wY[h]) < 0.5f;
+            wX[h] = nx; wY[h] = ny;
+            if (done) break;
+        }
+        float minM = Math.Max(40, handRef * GW * handRef * GW * 0.18f);
+        if (m0 < minM) { if (++wLost[h] > 8) wOn[h] = false; }
+        else { wLost[h] = 0; wS[h] = Lf(wS[h], Clampf((float)Math.Sqrt(cntN) * 0.85f, 10, 70), 0.3f); }
     }
 
     static void Morph(byte[] m)
@@ -2329,39 +2445,38 @@ public static class Oficina
         for (int y = b.y0; y <= yEnd; y++) for (int x = b.x0; x <= b.x1; x++) { int i = y * GW + x; if (tmpM[i] != 0) { pn++; px += x; py += y; } }
         float pcx = pn > 3 ? (float)px / pn : cx, pcy = pn > 3 ? (float)py / pn : cy + (yEnd - b.y0) * 0.15f;
         float pr = (float)Math.Sqrt(Math.Max(1, pn) / Math.PI) + er;
-        // perfil radial: los dedos son "picos" lejos de la palma
-        const int NA = 72;
-        float[] rad = new float[NA];
-        for (int a = 0; a < NA; a++)
+        // circulos alrededor de la palma: cada dedo corta el circulo una vez (metodo clasico de los tutoriales de OpenCV)
+        int runs = 0;
+        foreach (float kr in new float[] { 1.45f, 1.7f, 1.95f })
         {
-            double ang = a * Math.PI * 2 / NA;
-            float dx = (float)Math.Cos(ang), dy = (float)Math.Sin(ang), last = 0;
-            for (float r = pr * 0.5f; r < pr * 3.5f + 6; r += 0.5f)
+            float R = pr * kr;
+            int N = Math.Max(72, (int)(Math.PI * 2 * R * 2));
+            int first = -1, nRun = 0, len = 0; bool prev = false;
+            // empezamos en un punto de abajo (excluido) para no partir un dedo
+            for (int k = 0; k <= N; k++)
             {
-                int x = (int)(pcx + dx * r), y = (int)(pcy + dy * r);
-                if (x < 0 || y < 0 || x >= GW || y >= GH) break;
-                if (lab[y * GW + x] == b.id && y <= yEnd + 2) last = r;
-                else if (r > last + 2.5f) break;
+                double ang = Math.PI / 2 + k * Math.PI * 2 / N;
+                float dx = (float)Math.Cos(ang), dy = (float)Math.Sin(ang);
+                int x = (int)Math.Round(pcx + dx * R), y = (int)Math.Round(pcy + dy * R);
+                bool on = dy < 0.5f && x >= 0 && y >= 0 && x < GW && y < GH && y <= yEnd + 2 && lab[y * GW + x] == b.id;
+                if (on) len++;
+                else if (prev)
+                {
+                    float w = len * (float)(Math.PI * 2 * R / N);
+                    if (w >= 1.2f && w <= Math.Max(4f, pr * 1.1f)) nRun++;
+                    len = 0;
+                }
+                prev = on;
+                if (first < 0) first = k;
             }
-            rad[a] = last;
+            runs = Math.Max(runs, nRun);
         }
-        float thr = pr * 1.55f + 1.5f;
-        int runs = 0; bool inRun = false; int runLen = 0;
-        for (int k = 0; k <= NA; k++)
-        {
-            int a = k % NA;
-            double ang = a * Math.PI * 2 / NA;
-            bool down = Math.Sin(ang) > 0.55;   // hacia abajo esta el antebrazo
-            bool hi = !down && rad[a] > thr;
-            if (hi) { if (!inRun) { inRun = true; runLen = 0; } runLen++; }
-            else if (inRun) { inRun = false; if (runLen >= 1 && runLen <= 14) runs++; }
-        }
-        if (inRun && runLen <= 14) runs++;
+        float thr = pr;
         int fingers = Math.Min(5, runs);
         fHist[h, fHi] = fingers;
         int[] cnt = new int[6]; for (int k = 0; k < 7; k++) cnt[fHist[h, k]]++;
         int bestF = 0; for (int f = 1; f <= 5; f++) if (cnt[f] > cnt[bestF]) bestF = f;
-        tkF[h] = bestF;
+        tkF[h] = bestF >= 4 ? 5 : bestF;   // con 4 o 5 dedos la mano esta abierta (el pulgar a veces no se ve)
         tkU[h] = Lf(tkU[h], pcx / GW, 0.5f); tkV[h] = Lf(tkV[h], pcy / GH, 0.5f); tkS[h] = Lf(tkS[h], (float)Math.Sqrt(n) / GW, 0.35f);
         tkPx[h] = pcx; tkPy[h] = pcy;
         tkSeen[h] = gt;
@@ -2396,28 +2511,56 @@ public static class Oficina
         }
     }
 
-    // calibracion: 1 fondo, 2 color de piel
+    // calibracion: 1 fondo, 2 histograma de tu piel frente al del resto de la imagen
     static void CalibrateSkin()
     {
         int cx = GW / 2, cy = GH / 2, rr = 14;
-        List<int> cr = new List<int>(), cbl = new List<int>();
-        for (int y = cy - rr; y < cy + rr; y++)
-            for (int x = cx - rr; x < cx + rr; x++)
+        float[] hs = new float[HB * HB], hg = new float[HB * HB]; int ns = 0, ng = 0;
+        for (int y = 0; y < GH; y++)
+            for (int x = 0; x < GW; x++)
             {
-                int i = y * GW + x;
-                bool fg = !bgOk || Math.Abs(gY[i] - bgY[i]) > 22 || Math.Abs(gCr[i] - bgCr[i]) + Math.Abs(gCb[i] - bgCb[i]) > 14;
-                if (fg && gY[i] > 40) { cr.Add(gCr[i]); cbl.Add(gCb[i]); }
+                int i = y * GW + x, bin = (gCr[i] >> 3) * HB + (gCb[i] >> 3);
+                if (Math.Abs(x - cx) < rr && Math.Abs(y - cy) < rr) { if (Fg(i) && gY[i] > 35) { hs[bin]++; ns++; } }
+                else if (Math.Abs(x - cx) > rr + 4 || Math.Abs(y - cy) > rr + 4)
+                {
+                    if (faceOk && x >= faceX0 && x <= faceX1 && y >= faceY0 && y <= faceY1) continue;
+                    hg[bin]++; ng++;
+                }
             }
-        if (cr.Count < 40) { Msg("No veo tu mano en el recuadro: acercala y pulsa ESPACIO otra vez"); return; }
-        cr.Sort(); cbl.Sort();
-        skCr = cr[cr.Count / 2]; skCb = cbl[cbl.Count / 2];
-        float madR = 0, madB = 0; foreach (int v in cr) madR += Math.Abs(v - skCr); foreach (int v in cbl) madB += Math.Abs(v - skCb);
-        madR /= cr.Count; madB /= cbl.Count;
-        skKr = Clampf(madR * 3.0f, 7, 20); skKb = Clampf(madB * 3.0f, 7, 20);
-        handRef = Clampf((float)Math.Sqrt(cr.Count) / GW * 1.3f, 0.06f, 0.3f);
+        if (ns < 40) { Msg("No veo tu mano en el recuadro: acercala y pulsa ESPACIO otra vez"); return; }
+        hs = Blur(hs); hg = Blur(hg);
+        float mx = 0; for (int k = 0; k < HB * HB; k++) mx = Math.Max(mx, hs[k]);
+        for (int k = 0; k < HB * HB; k++)
+        {
+            float ps = hs[k] / ns, pg = hg[k] / Math.Max(1, ng);
+            float r = ps / (ps + pg + 0.3f / ns);
+            float conf = Sat(hs[k] / (mx * 0.04f + 1e-6f));
+            skP[k] = Sat(r * 1.2f) * conf;
+        }
+        skInit = true;
+        handRef = Clampf((float)Math.Sqrt(ns) / GW * 1.3f, 0.06f, 0.3f);
         if (faceOk) { face0U = faceU; face0V = faceV; face0S = faceS; }
+        wOn[0] = wOn[1] = false;
         calStep = 0;
-        Msg("Calibrado! Mueve las manos: puno = coger, mano abierta = soltar, un dedo = pulsar");
+        Msg("Calibrado! Mueve las manos delante del pecho: puno = coger, mano abierta = soltar, un dedo = pulsar");
+    }
+
+    static float[] Blur(float[] h)
+    {
+        float[] o = new float[HB * HB];
+        for (int a = 0; a < HB; a++)
+            for (int b = 0; b < HB; b++)
+            {
+                float s = 0;
+                for (int da = -1; da <= 1; da++) for (int db = -1; db <= 1; db++)
+                    {
+                        int aa = a + da, bb = b + db;
+                        if (aa < 0 || bb < 0 || aa >= HB || bb >= HB) continue;
+                        s += h[aa * HB + bb] * (da == 0 && db == 0 ? 4 : (da == 0 || db == 0 ? 2 : 1));
+                    }
+                o[a * HB + b] = s / 16;
+            }
+        return o;
     }
     // ================================================================ consola
     [DllImport("kernel32.dll")] static extern IntPtr GetStdHandle(int n);
@@ -2793,6 +2936,9 @@ public static class Oficina
                     int mx = x0 + (int)(tkPx[h] * cw / GW), my = y0 + (int)(tkPy[h] * chh / GH);
                     int col = h == 0 ? 0xFF4040 : 0x40A0FF;
                     for (int k = -3; k <= 3; k++) { PixSet(mx + k, my, col); PixSet(mx, my + k, col); }
+                    int rx0 = x0 + (int)((wX[h] - wS[h]) * cw / GW), rx1 = x0 + (int)((wX[h] + wS[h]) * cw / GW), ry0 = y0 + (int)((wY[h] - wS[h] * 1.3f) * chh / GH), ry1 = y0 + (int)((wY[h] + wS[h]) * chh / GH);
+                    for (int x = rx0; x <= rx1; x++) { PixSet(x, ry0, col); PixSet(x, ry1, col); }
+                    for (int y = ry0; y <= ry1; y++) { PixSet(rx0, y, col); PixSet(rx1, y, col); }
                 }
             if (faceOk && calStep == 0)
             {
