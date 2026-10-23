@@ -1576,6 +1576,7 @@ public static class Oficina
         p.y = Math.Max(0.45f, Math.Min(1.6f, p.y));
         p.x = Math.Max(-0.85f, Math.Min(0.95f, p.x));
         p.z = Math.Max(-0.15f, Math.Min(0.84f, p.z));
+        if (Math.Abs(p.x) < 0.3f && p.z < 0.24f) p.z = 0.24f;   // no atravesar el pecho
         float r = 0.03f;
         for (int k = 0; k < nStaticFixed; k++)
         {
@@ -1598,8 +1599,8 @@ public static class Oficina
             V d0 = ConstrainHand(hTgt[h]) - ArmRoot(h, t0); float l0 = d0.Len(), ex = l0 - 0.6f;
             if (ex > 0) { wf = Math.Max(wf, ex * 1.6f * Math.Max(0, d0.z / l0 + 0.3f)); ws += ex * 1.4f * d0.x / l0; }
         }
-        autoF = Lf(autoF, Clampf(wf, 0, 0.45f), (float)Math.Min(1, dt * 4));
-        autoS = Lf(autoS, Clampf(ws, -0.3f, 0.3f), (float)Math.Min(1, dt * 4));
+        autoF = Lf(autoF, Clampf(wf, 0, 0.35f), (float)Math.Min(1, dt * 4));
+        autoS = Lf(autoS, Clampf(ws, -0.15f, 0.15f), (float)Math.Min(1, dt * 4));
         Tf torso = TorsoTf();
         for (int h = 0; h < 2; h++)
         {
@@ -2108,7 +2109,7 @@ public static class Oficina
     static int[] lab = new int[GW * GH], qbuf = new int[GW * GH];
     static bool[] tkOk = new bool[2]; static float[] tkU = new float[2], tkV = new float[2], tkS = new float[2], tkPx = new float[2], tkPy = new float[2];
     static int[] tkF = new int[2]; static int[,] fHist = new int[2, 7]; static int fHi;
-    static double[] tkSeen = { -9, -9 };
+    static double[] tkSeen = { -9, -9 }, tkGoodT = { -9, -9 }; static int[] tkHits = new int[2]; static double noHandT = 0, noHandMsgT = -99;
     static bool faceOk; static float faceU = 0.5f, faceV = 0.3f, faceS = 0.2f, face0U = 0.5f, face0V = 0.3f, face0S = 0.2f, handRef = 0.12f;
     static int faceX0, faceY0, faceX1, faceY1;
     static int calStep; static bool camActive; static int frameNo;
@@ -2213,6 +2214,8 @@ public static class Oficina
         foreach (Blob b in hb)
         {
             if (b.area > GW * GH * 0.16f) continue;
+            float minA = Math.Max(110, handRef * GW * handRef * GW * 0.3f);
+            if (b.area < minA) continue;
             if (face != null)
             {
                 int ox = Math.Min(b.x1, face.x1) - Math.Max(b.x0, face.x0), oy = Math.Min(b.y1, face.y1) - Math.Max(b.y0, face.y0);
@@ -2237,7 +2240,14 @@ public static class Oficina
             HandFeat(h, cand[0]); used[h] = true;
         }
         fHi = (fHi + 1) % 7;
-        for (int h = 0; h < 2; h++) tkOk[h] = used[h];
+        for (int h = 0; h < 2; h++)
+        {
+            tkHits[h] = used[h] ? tkHits[h] + 1 : 0;
+            tkOk[h] = tkHits[h] >= 3;
+            if (tkOk[h]) tkGoodT[h] = gt;
+        }
+        if (tkOk[0] || tkOk[1]) noHandT = gt;
+        else if (calStep == 0 && gt - noHandT > 2.5 && gt - noHandMsgT > 8) { noHandMsgT = gt; Msg("No veo tus manos: levantalas delante del pecho, que salgan en la camara"); }
     }
 
     static void Morph(byte[] m)
@@ -2362,11 +2372,11 @@ public static class Oficina
     {
         for (int h = 0; h < 2; h++)
         {
-            if (tkOk[h] || gt - tkSeen[h] < 0.4)
+            if (tkOk[h] || gt - tkGoodT[h] < 0.4)
             {
                 float x = Clampf((tkU[h] - 0.5f) * 1.3f, -0.75f, 0.85f);
                 float y = 0.6f + Sat((0.98f - tkV[h]) / 0.78f) * 0.8f;
-                float z = Clampf(0.32f + (tkS[h] / handRef - 1) * 0.6f, 0.0f, 0.84f);
+                float z = Clampf(0.42f + (tkS[h] / handRef - 1) * 0.5f, Math.Abs(x) > 0.5f ? 0.0f : 0.3f, 0.84f);
                 hTgt[h] = LerpV(hTgt[h], new V(x, y, z), (float)Math.Min(1, dt * 10));
                 hFingers[h] = tkF[h];
             }
