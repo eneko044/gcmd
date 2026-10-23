@@ -54,3 +54,14 @@ Convierte la webcam en un dibujo ASCII en tiempo real dentro del `cmd`. Doble cl
 **Teclas:** flechas izquierda/derecha (o 1-7) cambian de modo, arriba/abajo el contraste, RePag/AvPag el brillo, M espejo, V voltear, F foto congelada, S guardar el dibujo como .txt en el escritorio, K cambiar de camara, ESC salir.
 
 Si sale un aviso de privacidad: Configuracion > Privacidad > Camara > "Permitir que las aplicaciones de escritorio accedan a la camara".
+
+## OFICINA_3D.bat
+
+Un personaje sentado en su oficina, en 3D renderizado dentro de la consola (sombras del sol por la ventana, flexo, brillo del monitor...). Hay mesa, ordenador, teclado, raton, taza, folios, impresora, papelera, planta, estanteria, reloj, cuadro y mas. Todo tiene colisiones y fisicas. Se controla con **tus manos y la webcam**:
+
+- Calibracion: al empezar, deja la camara sin manos y pulsa ESPACIO; despues pon las manos abiertas en el recuadro y pulsa ESPACIO.
+- Mueves la mano: se mueve la del personaje. Acercarla a la camara = mas lejos en la mesa. Inclinar la cabeza = el personaje se inclina.
+- Puno = coger, abrir la mano = soltar o lanzar (segun la velocidad). Un dedo = pulsar botones y teclear.
+- Enciende el ordenador con el boton de la torre, escribe en NOTAS, coge el raton para mover el cursor (dejarlo quieto encima de un boton = clic), dibuja en PAINT, IMPRIMIR saca un folio por la impresora, el interruptor del flexo, arruga folios (mantenlos cogidos 1 s) y tiralos a la papelera...
+
+**Teclas:** T cambia entre camara y teclado (mano izq. A D W S Q E, Z puno, X dedo; mano der. J L I K U O, M puno, N dedo; flechas = inclinarse), C recalibrar, TAB ver la camara, F1-F4 vistas, R recoger los objetos, H ayuda, +/- detalle, ESC salir.
