@@ -64,4 +64,4 @@ Un personaje sentado en su oficina, en 3D renderizado dentro de la consola (somb
 - Puno = coger, abrir la mano = soltar o lanzar (segun la velocidad). Un dedo = pulsar botones y teclear.
 - Enciende el ordenador con el boton de la torre, escribe en NOTAS, coge el raton para mover el cursor (dejarlo quieto encima de un boton = clic), dibuja en PAINT, IMPRIMIR saca un folio por la impresora, el interruptor del flexo, arruga folios (mantenlos cogidos 1 s) y tiralos a la papelera...
 
-**Teclas:** T cambia entre camara y teclado (mano izq. A D W S Q E, Z puno, X dedo; mano der. J L I K U O, M puno, N dedo; flechas = inclinarse), C recalibrar, TAB ver la camara, F1-F4 vistas, R recoger los objetos, H ayuda, +/- detalle, ESC salir.
+**Teclas:** T cambia entre camara y teclado (mano izq. A D W S Q E, Z puno, X dedo; mano der. J L I K U O, M puno, N dedo; flechas = inclinarse), C recalibrar, G invertir izquierda/derecha (si los brazos van al reves), TAB ver la camara, F1-F4 vistas, R recoger los objetos, H ayuda, +/- detalle, ESC salir.

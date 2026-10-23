@@ -2129,6 +2129,18 @@ public static class Oficina
         return true;
     }
 
+    static bool camMirror = false;   // G: invertir izquierda/derecha
+    static void FlipBg()
+    {
+        for (int y = 0; y < GH; y++)
+            for (int x = 0; x < GW / 2; x++)
+            {
+                int i = y * GW + x, j = y * GW + GW - 1 - x; float t;
+                t = bgY[i]; bgY[i] = bgY[j]; bgY[j] = t;
+                t = bgCr[i]; bgCr[i] = bgCr[j]; bgCr[j] = t;
+                t = bgCb[i]; bgCb[i] = bgCb[j]; bgCb[j] = t;
+            }
+    }
     static void TrackFrame()
     {
         frameNo++;
@@ -2139,7 +2151,7 @@ public static class Oficina
             int row = (bu ? ih_ - 1 - sy : sy) * st;
             for (int x = 0; x < GW; x++)
             {
-                int sx = Math.Min(iw_ - 1, (int)((GW - 1 - x + 0.5f) * iw_ / GW));
+                int sx = Math.Min(iw_ - 1, (int)(((camMirror ? GW - 1 - x : x) + 0.5f) * iw_ / GW));
                 int p = row + sx * 4;
                 if (p + 2 >= img.Length) continue;
                 int B = img[p], G = img[p + 1], R = img[p + 2], i = y * GW + x;
@@ -2572,7 +2584,7 @@ public static class Oficina
     static bool Key(int vk) { return kNow[vk]; }
     static bool Press(int vk) { return kNow[vk] && !kPrev[vk]; }
     static readonly int[] WATCH = { 0x1B, 0x20, 0x0D, 0x09, 0x70, 0x71, 0x72, 0x73, 0x25, 0x26, 0x27, 0x28, 0x6B, 0x6D, 0xBB, 0xBD,
-        'A', 'D', 'W', 'S', 'Q', 'E', 'Z', 'X', 'J', 'L', 'I', 'K', 'U', 'O', 'M', 'N', 'C', 'T', 'R', 'H', 'V' };
+        'A', 'D', 'W', 'S', 'Q', 'E', 'Z', 'X', 'J', 'L', 'I', 'K', 'U', 'O', 'M', 'N', 'C', 'T', 'R', 'H', 'V', 'G' };
 
     static void ReadInput()
     {
@@ -2599,6 +2611,7 @@ public static class Oficina
         if (Press('T')) { manual = !manual; Msg(manual ? "Control con el teclado" : "Control con la camara"); }
         if (Press('R')) { ResetBodies(); Msg("Mesa recogida"); }
         if (Press('H')) help = !help;
+        if (Press('G')) { camMirror = !camMirror; FlipBg(); tkU[0] = 1 - tkU[0]; tkU[1] = 1 - tkU[1]; faceU = 1 - faceU; face0U = 1 - face0U; Msg("Camara invertida (izquierda <-> derecha)"); }
         if (Press('C') && camActive) { calStep = 1; Msg("Recalibrando"); }
         if (Press(0x70)) view = 0; if (Press(0x71)) view = 1; if (Press(0x72)) view = 2; if (Press(0x73)) view = 3;
         if (Press(0x6B) || Press(0xBB)) { if (fontCtl) { fIdx = Math.Max(0, fIdx - 1); ApplyFont(); } else Msg("En Windows Terminal: Ctrl + '-' para mas detalle"); }
@@ -2788,7 +2801,7 @@ public static class Oficina
         }
         TS(1, 3, "PC " + (pcOn ? "ON " : "OFF") + "  FLEXO " + (lampOn ? "ON " : "OFF") + "  PAPELERA " + binCount + "  " + (int)Math.Round(fps) + " fps", gr);
         if (gt - msgT < 4 && msg.Length > 0 && !(((int)((gt - msgT) * 8)) % 2 == 0 && gt - msgT > 3.4)) TS((W - msg.Length) / 2, 5, msg, 0xFFE060);
-        string bar = help ? "H: cerrar ayuda" : "H ayuda   T teclado/camara   C calibrar   TAB ver camara   F1-F4 vistas   R recoger   +/- detalle   ESC salir";
+        string bar = help ? "H: cerrar ayuda" : "H ayuda   T teclado/camara   C calibrar   G invertir   TAB ver camara   F1-F4 vistas   R recoger   +/- detalle   ESC salir";
         TS(Math.Max(0, (W - bar.Length) / 2), H - 1, bar.Length > W ? bar.Substring(0, W) : bar, gr);
         if (camActive && calStep != 0)
         {
@@ -2807,6 +2820,7 @@ public static class Oficina
                 "  mueve las manos -> mueve los brazos (acercalas = estirar el brazo)",
                 "  PUNO = coger / apretar     MANO ABIERTA = soltar o lanzar",
                 "  UN DEDO = pulsar botones y teclear     inclinate = el cuerpo se inclina",
+                "  si los brazos van al reves pulsa G (invierte izquierda/derecha)",
                 "",
                 "CON EL TECLADO (T):",
                 "  mano izq: A D (lados)  W S (delante/detras)  Q E (abajo/arriba)",
