@@ -77,3 +77,14 @@ Shooter tactico por equipos en 3D (raycasting con texturas, sombras del sol, cie
 - **Online en red local** como el F1: sala con eleccion de bando, los huecos se rellenan con bots y se juega en tiempo real. Para unirse sin permisos de administrador: U y el codigo (IP) que sale en la sala del amigo.
 
 **Controles:** WASD moverse, raton apuntar (M lo activa/desactiva; tambien flechas), clic o ESPACIO disparar, clic derecho o Z mira del AWP, R recargar, CTRL agacharse, SHIFT andar, 1-5 armas, Q arma anterior, B tienda, E plantar/desactivar, TAB marcador, F1 ayuda, ESC pausa.
+
+## CABEZA_3D.bat
+
+Una cabeza en 3D (renderizada por software dentro de la consola, con luces de estudio, piel con brillo, ojos con iris y reflejos, parpados, pestanas, cejas, pelo, orejas, cuello y hombros) que **imita tu cabeza y tus gestos con la webcam** en tiempo real:
+
+- Girar, mirar arriba/abajo, ladear la cabeza, acercarte o moverte.
+- Abrir la boca (se ven los dientes y la lengua), sonreir, subir o bajar las cejas, cerrar los ojos y parpadear, y hacia donde miras.
+
+Al abrirlo sale tu camara con un ovalo: pon la cara dentro, relajada y mirando al frente, y se calibra sola (aprende el color de tu piel frente al fondo y donde tienes los ojos, las cejas y la boca). Funciona con vision por ordenador clasica, sin instalar nada. Sin camara hace una demostracion.
+
+**Teclas:** ESPACIO recalibrar, TAB ver/ocultar tu camara, C cambiar de estilo (5 cabezas), G invertir izquierda/derecha, K cambiar de camara, D demostracion, H ayuda, +/- detalle, ESC salir.
