@@ -202,3 +202,32 @@ Lo unico que ha batido de verdad a la ruleta son defectos fisicos de la
 rueda (como el grupo de control de este experimento) o medir la bola en
 vuelo. Los casinos actuales revisan y rotan las ruedas, y la ruleta online
 usa un generador aleatorio sin defectos fisicos que explotar.
+
+## 7. Escalada: empezar con 5 EUR y ver hasta donde se llega
+
+`python ruleta.py escalada --banca 5 --mesa francesa --max-rondas 100000`
+
+Estrategia: apuesta audaz sin techo, es decir, todo el saldo a rojo en cada
+tirada (desde 5.120 EUR el maximo de la mesa limita la apuesta a 3.000 EUR).
+Se repite 1.000.000 de veces y se apunta el maximo que alcanza cada partida.
+
+* **Partida en directo**: 5 -> 10 (rojo) -> 0 (negro). Maximo: 10 EUR.
+* **Record de 1.000.000 de partidas**: 10 rojos seguidos (5 -> 5.120 EUR),
+  despues 10.000 tiradas de 3.000 EUR con un pico de **415.240 EUR**...
+  y como no se retiro, acabo en 0 EUR.
+
+| Llegar a | Probabilidad | 1 de cada |
+|---|---|---|
+| 10 EUR | 48,6 % | 2 |
+| 40 EUR | 11,8 % | 8 |
+| 100 EUR | 2,9 % | 35 |
+| 1.000 EUR | 0,35 % | 287 |
+| 10.000 EUR | 0,04 % | 2.667 |
+| 100.000 EUR | 0,002 % | 47.619 |
+
+La mitad de las partidas no pasa nunca de los 5 EUR iniciales. Entre el
+millon de jugadores se pusieron 5.000.000 EUR y se recuperaron 68.395 EUR: la
+casa se queda el 98,6 %. El maximo solo es dinero real si **te retiras al
+llegar a una meta fija**, y la probabilidad de llegar a una meta X empezando
+con 5 EUR es como mucho 5/X (el valor de un juego justo), un poco menos por
+la ventaja de la casa.

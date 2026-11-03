@@ -1,0 +1,1311 @@
+{
+  "mesa": "francesa",
+  "banca_inicial": 5.0,
+  "partidas": 1000000,
+  "estrategia": "apuesta audaz sin techo a rojo",
+  "record_eur": 415240.0,
+  "record_partida": 204428,
+  "record_tiradas": 10414,
+  "record_historial": [
+    {
+      "tirada": 1,
+      "apuesta": 5.0,
+      "numero": 1,
+      "saldo": 10.0
+    },
+    {
+      "tirada": 2,
+      "apuesta": 10.0,
+      "numero": 5,
+      "saldo": 20.0
+    },
+    {
+      "tirada": 3,
+      "apuesta": 20.0,
+      "numero": 7,
+      "saldo": 40.0
+    },
+    {
+      "tirada": 4,
+      "apuesta": 40.0,
+      "numero": 12,
+      "saldo": 80.0
+    },
+    {
+      "tirada": 5,
+      "apuesta": 80.0,
+      "numero": 32,
+      "saldo": 160.0
+    },
+    {
+      "tirada": 6,
+      "apuesta": 160.0,
+      "numero": 9,
+      "saldo": 320.0
+    },
+    {
+      "tirada": 7,
+      "apuesta": 320.0,
+      "numero": 18,
+      "saldo": 640.0
+    },
+    {
+      "tirada": 8,
+      "apuesta": 640.0,
+      "numero": 18,
+      "saldo": 1280.0
+    },
+    {
+      "tirada": 9,
+      "apuesta": 1280.0,
+      "numero": 23,
+      "saldo": 2560.0
+    },
+    {
+      "tirada": 10,
+      "apuesta": 2560.0,
+      "numero": 14,
+      "saldo": 5120.0
+    },
+    {
+      "tirada": 11,
+      "apuesta": 3000.0,
+      "numero": 16,
+      "saldo": 8120.0
+    },
+    {
+      "tirada": 12,
+      "apuesta": 3000.0,
+      "numero": 6,
+      "saldo": 5120.0
+    },
+    {
+      "tirada": 13,
+      "apuesta": 3000.0,
+      "numero": 12,
+      "saldo": 8120.0
+    },
+    {
+      "tirada": 14,
+      "apuesta": 3000.0,
+      "numero": 6,
+      "saldo": 5120.0
+    },
+    {
+      "tirada": 15,
+      "apuesta": 3000.0,
+      "numero": 12,
+      "saldo": 8120.0
+    },
+    {
+      "tirada": 16,
+      "apuesta": 3000.0,
+      "numero": 33,
+      "saldo": 5120.0
+    },
+    {
+      "tirada": 17,
+      "apuesta": 3000.0,
+      "numero": 22,
+      "saldo": 2120.0
+    },
+    {
+      "tirada": 18,
+      "apuesta": 2120.0,
+      "numero": 1,
+      "saldo": 4240.0
+    },
+    {
+      "tirada": 19,
+      "apuesta": 3000.0,
+      "numero": 30,
+      "saldo": 7240.0
+    },
+    {
+      "tirada": 20,
+      "apuesta": 3000.0,
+      "numero": 9,
+      "saldo": 10240.0
+    },
+    {
+      "tirada": 21,
+      "apuesta": 3000.0,
+      "numero": 4,
+      "saldo": 7240.0
+    },
+    {
+      "tirada": 22,
+      "apuesta": 3000.0,
+      "numero": 16,
+      "saldo": 10240.0
+    },
+    {
+      "tirada": 23,
+      "apuesta": 3000.0,
+      "numero": 19,
+      "saldo": 13240.0
+    },
+    {
+      "tirada": 24,
+      "apuesta": 3000.0,
+      "numero": 21,
+      "saldo": 16240.0
+    },
+    {
+      "tirada": 25,
+      "apuesta": 3000.0,
+      "numero": 2,
+      "saldo": 13240.0
+    },
+    {
+      "tirada": 26,
+      "apuesta": 3000.0,
+      "numero": 14,
+      "saldo": 16240.0
+    },
+    {
+      "tirada": 27,
+      "apuesta": 3000.0,
+      "numero": 31,
+      "saldo": 13240.0
+    },
+    {
+      "tirada": 28,
+      "apuesta": 3000.0,
+      "numero": 5,
+      "saldo": 16240.0
+    },
+    {
+      "tirada": 29,
+      "apuesta": 3000.0,
+      "numero": 5,
+      "saldo": 19240.0
+    },
+    {
+      "tirada": 30,
+      "apuesta": 3000.0,
+      "numero": 23,
+      "saldo": 22240.0
+    },
+    {
+      "tirada": 31,
+      "apuesta": 3000.0,
+      "numero": 15,
+      "saldo": 19240.0
+    },
+    {
+      "tirada": 32,
+      "apuesta": 3000.0,
+      "numero": 31,
+      "saldo": 16240.0
+    },
+    {
+      "tirada": 33,
+      "apuesta": 3000.0,
+      "numero": 35,
+      "saldo": 13240.0
+    },
+    {
+      "tirada": 34,
+      "apuesta": 3000.0,
+      "numero": 34,
+      "saldo": 16240.0
+    },
+    {
+      "tirada": 35,
+      "apuesta": 3000.0,
+      "numero": 16,
+      "saldo": 19240.0
+    },
+    {
+      "tirada": 36,
+      "apuesta": 3000.0,
+      "numero": 12,
+      "saldo": 22240.0
+    },
+    {
+      "tirada": 37,
+      "apuesta": 3000.0,
+      "numero": 20,
+      "saldo": 19240.0
+    },
+    {
+      "tirada": 38,
+      "apuesta": 3000.0,
+      "numero": 4,
+      "saldo": 16240.0
+    },
+    {
+      "tirada": 39,
+      "apuesta": 3000.0,
+      "numero": 1,
+      "saldo": 19240.0
+    },
+    {
+      "tirada": 40,
+      "apuesta": 3000.0,
+      "numero": 18,
+      "saldo": 22240.0
+    },
+    {
+      "tirada": 41,
+      "apuesta": 3000.0,
+      "numero": 19,
+      "saldo": 25240.0
+    },
+    {
+      "tirada": 42,
+      "apuesta": 3000.0,
+      "numero": 6,
+      "saldo": 22240.0
+    },
+    {
+      "tirada": 43,
+      "apuesta": 3000.0,
+      "numero": 16,
+      "saldo": 25240.0
+    },
+    {
+      "tirada": 44,
+      "apuesta": 3000.0,
+      "numero": 6,
+      "saldo": 22240.0
+    },
+    {
+      "tirada": 45,
+      "apuesta": 3000.0,
+      "numero": 5,
+      "saldo": 25240.0
+    },
+    {
+      "tirada": 46,
+      "apuesta": 3000.0,
+      "numero": 18,
+      "saldo": 28240.0
+    },
+    {
+      "tirada": 47,
+      "apuesta": 3000.0,
+      "numero": 11,
+      "saldo": 25240.0
+    },
+    {
+      "tirada": 48,
+      "apuesta": 3000.0,
+      "numero": 23,
+      "saldo": 28240.0
+    },
+    {
+      "tirada": 49,
+      "apuesta": 3000.0,
+      "numero": 28,
+      "saldo": 25240.0
+    },
+    {
+      "tirada": 50,
+      "apuesta": 3000.0,
+      "numero": 18,
+      "saldo": 28240.0
+    },
+    {
+      "tirada": 51,
+      "apuesta": 3000.0,
+      "numero": 4,
+      "saldo": 25240.0
+    },
+    {
+      "tirada": 52,
+      "apuesta": 3000.0,
+      "numero": 1,
+      "saldo": 28240.0
+    },
+    {
+      "tirada": 53,
+      "apuesta": 3000.0,
+      "numero": 2,
+      "saldo": 25240.0
+    },
+    {
+      "tirada": 54,
+      "apuesta": 3000.0,
+      "numero": 2,
+      "saldo": 22240.0
+    },
+    {
+      "tirada": 55,
+      "apuesta": 3000.0,
+      "numero": 29,
+      "saldo": 19240.0
+    },
+    {
+      "tirada": 56,
+      "apuesta": 3000.0,
+      "numero": 18,
+      "saldo": 22240.0
+    },
+    {
+      "tirada": 57,
+      "apuesta": 3000.0,
+      "numero": 21,
+      "saldo": 25240.0
+    },
+    {
+      "tirada": 58,
+      "apuesta": 3000.0,
+      "numero": 24,
+      "saldo": 22240.0
+    },
+    {
+      "tirada": 59,
+      "apuesta": 3000.0,
+      "numero": 22,
+      "saldo": 19240.0
+    },
+    {
+      "tirada": 60,
+      "apuesta": 3000.0,
+      "numero": 9,
+      "saldo": 22240.0
+    },
+    {
+      "tirada": 61,
+      "apuesta": 3000.0,
+      "numero": 7,
+      "saldo": 25240.0
+    },
+    {
+      "tirada": 62,
+      "apuesta": 3000.0,
+      "numero": 23,
+      "saldo": 28240.0
+    },
+    {
+      "tirada": 63,
+      "apuesta": 3000.0,
+      "numero": 12,
+      "saldo": 31240.0
+    },
+    {
+      "tirada": 64,
+      "apuesta": 3000.0,
+      "numero": 4,
+      "saldo": 28240.0
+    },
+    {
+      "tirada": 65,
+      "apuesta": 3000.0,
+      "numero": 11,
+      "saldo": 25240.0
+    },
+    {
+      "tirada": 66,
+      "apuesta": 3000.0,
+      "numero": 17,
+      "saldo": 22240.0
+    },
+    {
+      "tirada": 67,
+      "apuesta": 3000.0,
+      "numero": 0,
+      "saldo": 20740.0
+    },
+    {
+      "tirada": 68,
+      "apuesta": 3000.0,
+      "numero": 0,
+      "saldo": 19240.0
+    },
+    {
+      "tirada": 69,
+      "apuesta": 3000.0,
+      "numero": 10,
+      "saldo": 16240.0
+    },
+    {
+      "tirada": 70,
+      "apuesta": 3000.0,
+      "numero": 30,
+      "saldo": 19240.0
+    },
+    {
+      "tirada": 71,
+      "apuesta": 3000.0,
+      "numero": 28,
+      "saldo": 16240.0
+    },
+    {
+      "tirada": 72,
+      "apuesta": 3000.0,
+      "numero": 14,
+      "saldo": 19240.0
+    },
+    {
+      "tirada": 73,
+      "apuesta": 3000.0,
+      "numero": 13,
+      "saldo": 16240.0
+    },
+    {
+      "tirada": 74,
+      "apuesta": 3000.0,
+      "numero": 15,
+      "saldo": 13240.0
+    },
+    {
+      "tirada": 75,
+      "apuesta": 3000.0,
+      "numero": 0,
+      "saldo": 11740.0
+    },
+    {
+      "tirada": 76,
+      "apuesta": 3000.0,
+      "numero": 19,
+      "saldo": 14740.0
+    },
+    {
+      "tirada": 77,
+      "apuesta": 3000.0,
+      "numero": 26,
+      "saldo": 11740.0
+    },
+    {
+      "tirada": 78,
+      "apuesta": 3000.0,
+      "numero": 11,
+      "saldo": 8740.0
+    },
+    {
+      "tirada": 79,
+      "apuesta": 3000.0,
+      "numero": 3,
+      "saldo": 11740.0
+    },
+    {
+      "tirada": 80,
+      "apuesta": 3000.0,
+      "numero": 9,
+      "saldo": 14740.0
+    },
+    {
+      "tirada": 81,
+      "apuesta": 3000.0,
+      "numero": 14,
+      "saldo": 17740.0
+    },
+    {
+      "tirada": 82,
+      "apuesta": 3000.0,
+      "numero": 16,
+      "saldo": 20740.0
+    },
+    {
+      "tirada": 83,
+      "apuesta": 3000.0,
+      "numero": 36,
+      "saldo": 23740.0
+    },
+    {
+      "tirada": 84,
+      "apuesta": 3000.0,
+      "numero": 36,
+      "saldo": 26740.0
+    },
+    {
+      "tirada": 85,
+      "apuesta": 3000.0,
+      "numero": 12,
+      "saldo": 29740.0
+    },
+    {
+      "tirada": 86,
+      "apuesta": 3000.0,
+      "numero": 21,
+      "saldo": 32740.0
+    },
+    {
+      "tirada": 87,
+      "apuesta": 3000.0,
+      "numero": 19,
+      "saldo": 35740.0
+    },
+    {
+      "tirada": 88,
+      "apuesta": 3000.0,
+      "numero": 29,
+      "saldo": 32740.0
+    },
+    {
+      "tirada": 89,
+      "apuesta": 3000.0,
+      "numero": 33,
+      "saldo": 29740.0
+    },
+    {
+      "tirada": 90,
+      "apuesta": 3000.0,
+      "numero": 35,
+      "saldo": 26740.0
+    },
+    {
+      "tirada": 91,
+      "apuesta": 3000.0,
+      "numero": 12,
+      "saldo": 29740.0
+    },
+    {
+      "tirada": 92,
+      "apuesta": 3000.0,
+      "numero": 31,
+      "saldo": 26740.0
+    },
+    {
+      "tirada": 93,
+      "apuesta": 3000.0,
+      "numero": 29,
+      "saldo": 23740.0
+    },
+    {
+      "tirada": 94,
+      "apuesta": 3000.0,
+      "numero": 2,
+      "saldo": 20740.0
+    },
+    {
+      "tirada": 95,
+      "apuesta": 3000.0,
+      "numero": 13,
+      "saldo": 17740.0
+    },
+    {
+      "tirada": 96,
+      "apuesta": 3000.0,
+      "numero": 14,
+      "saldo": 20740.0
+    },
+    {
+      "tirada": 97,
+      "apuesta": 3000.0,
+      "numero": 18,
+      "saldo": 23740.0
+    },
+    {
+      "tirada": 98,
+      "apuesta": 3000.0,
+      "numero": 9,
+      "saldo": 26740.0
+    },
+    {
+      "tirada": 99,
+      "apuesta": 3000.0,
+      "numero": 13,
+      "saldo": 23740.0
+    },
+    {
+      "tirada": 100,
+      "apuesta": 3000.0,
+      "numero": 18,
+      "saldo": 26740.0
+    },
+    {
+      "tirada": 101,
+      "apuesta": 3000.0,
+      "numero": 26,
+      "saldo": 23740.0
+    },
+    {
+      "tirada": 102,
+      "apuesta": 3000.0,
+      "numero": 22,
+      "saldo": 20740.0
+    },
+    {
+      "tirada": 103,
+      "apuesta": 3000.0,
+      "numero": 25,
+      "saldo": 23740.0
+    },
+    {
+      "tirada": 104,
+      "apuesta": 3000.0,
+      "numero": 36,
+      "saldo": 26740.0
+    },
+    {
+      "tirada": 105,
+      "apuesta": 3000.0,
+      "numero": 4,
+      "saldo": 23740.0
+    },
+    {
+      "tirada": 106,
+      "apuesta": 3000.0,
+      "numero": 32,
+      "saldo": 26740.0
+    },
+    {
+      "tirada": 107,
+      "apuesta": 3000.0,
+      "numero": 12,
+      "saldo": 29740.0
+    },
+    {
+      "tirada": 108,
+      "apuesta": 3000.0,
+      "numero": 29,
+      "saldo": 26740.0
+    },
+    {
+      "tirada": 109,
+      "apuesta": 3000.0,
+      "numero": 0,
+      "saldo": 25240.0
+    },
+    {
+      "tirada": 110,
+      "apuesta": 3000.0,
+      "numero": 30,
+      "saldo": 28240.0
+    },
+    {
+      "tirada": 111,
+      "apuesta": 3000.0,
+      "numero": 21,
+      "saldo": 31240.0
+    },
+    {
+      "tirada": 112,
+      "apuesta": 3000.0,
+      "numero": 18,
+      "saldo": 34240.0
+    },
+    {
+      "tirada": 113,
+      "apuesta": 3000.0,
+      "numero": 1,
+      "saldo": 37240.0
+    },
+    {
+      "tirada": 114,
+      "apuesta": 3000.0,
+      "numero": 13,
+      "saldo": 34240.0
+    },
+    {
+      "tirada": 115,
+      "apuesta": 3000.0,
+      "numero": 14,
+      "saldo": 37240.0
+    },
+    {
+      "tirada": 116,
+      "apuesta": 3000.0,
+      "numero": 22,
+      "saldo": 34240.0
+    },
+    {
+      "tirada": 117,
+      "apuesta": 3000.0,
+      "numero": 27,
+      "saldo": 37240.0
+    },
+    {
+      "tirada": 118,
+      "apuesta": 3000.0,
+      "numero": 13,
+      "saldo": 34240.0
+    },
+    {
+      "tirada": 119,
+      "apuesta": 3000.0,
+      "numero": 4,
+      "saldo": 31240.0
+    },
+    {
+      "tirada": 120,
+      "apuesta": 3000.0,
+      "numero": 2,
+      "saldo": 28240.0
+    },
+    {
+      "tirada": 121,
+      "apuesta": 3000.0,
+      "numero": 19,
+      "saldo": 31240.0
+    },
+    {
+      "tirada": 122,
+      "apuesta": 3000.0,
+      "numero": 19,
+      "saldo": 34240.0
+    },
+    {
+      "tirada": 123,
+      "apuesta": 3000.0,
+      "numero": 21,
+      "saldo": 37240.0
+    },
+    {
+      "tirada": 124,
+      "apuesta": 3000.0,
+      "numero": 21,
+      "saldo": 40240.0
+    },
+    {
+      "tirada": 125,
+      "apuesta": 3000.0,
+      "numero": 21,
+      "saldo": 43240.0
+    },
+    {
+      "tirada": 126,
+      "apuesta": 3000.0,
+      "numero": 28,
+      "saldo": 40240.0
+    },
+    {
+      "tirada": 127,
+      "apuesta": 3000.0,
+      "numero": 1,
+      "saldo": 43240.0
+    },
+    {
+      "tirada": 128,
+      "apuesta": 3000.0,
+      "numero": 20,
+      "saldo": 40240.0
+    },
+    {
+      "tirada": 129,
+      "apuesta": 3000.0,
+      "numero": 26,
+      "saldo": 37240.0
+    },
+    {
+      "tirada": 130,
+      "apuesta": 3000.0,
+      "numero": 33,
+      "saldo": 34240.0
+    },
+    {
+      "tirada": 131,
+      "apuesta": 3000.0,
+      "numero": 23,
+      "saldo": 37240.0
+    },
+    {
+      "tirada": 132,
+      "apuesta": 3000.0,
+      "numero": 0,
+      "saldo": 35740.0
+    },
+    {
+      "tirada": 133,
+      "apuesta": 3000.0,
+      "numero": 9,
+      "saldo": 38740.0
+    },
+    {
+      "tirada": 134,
+      "apuesta": 3000.0,
+      "numero": 28,
+      "saldo": 35740.0
+    },
+    {
+      "tirada": 135,
+      "apuesta": 3000.0,
+      "numero": 1,
+      "saldo": 38740.0
+    },
+    {
+      "tirada": 136,
+      "apuesta": 3000.0,
+      "numero": 28,
+      "saldo": 35740.0
+    },
+    {
+      "tirada": 137,
+      "apuesta": 3000.0,
+      "numero": 25,
+      "saldo": 38740.0
+    },
+    {
+      "tirada": 138,
+      "apuesta": 3000.0,
+      "numero": 5,
+      "saldo": 41740.0
+    },
+    {
+      "tirada": 139,
+      "apuesta": 3000.0,
+      "numero": 1,
+      "saldo": 44740.0
+    },
+    {
+      "tirada": 140,
+      "apuesta": 3000.0,
+      "numero": 5,
+      "saldo": 47740.0
+    },
+    {
+      "tirada": 141,
+      "apuesta": 3000.0,
+      "numero": 18,
+      "saldo": 50740.0
+    },
+    {
+      "tirada": 142,
+      "apuesta": 3000.0,
+      "numero": 31,
+      "saldo": 47740.0
+    },
+    {
+      "tirada": 143,
+      "apuesta": 3000.0,
+      "numero": 15,
+      "saldo": 44740.0
+    },
+    {
+      "tirada": 144,
+      "apuesta": 3000.0,
+      "numero": 2,
+      "saldo": 41740.0
+    },
+    {
+      "tirada": 145,
+      "apuesta": 3000.0,
+      "numero": 28,
+      "saldo": 38740.0
+    },
+    {
+      "tirada": 146,
+      "apuesta": 3000.0,
+      "numero": 17,
+      "saldo": 35740.0
+    },
+    {
+      "tirada": 147,
+      "apuesta": 3000.0,
+      "numero": 6,
+      "saldo": 32740.0
+    },
+    {
+      "tirada": 148,
+      "apuesta": 3000.0,
+      "numero": 7,
+      "saldo": 35740.0
+    },
+    {
+      "tirada": 149,
+      "apuesta": 3000.0,
+      "numero": 8,
+      "saldo": 32740.0
+    },
+    {
+      "tirada": 150,
+      "apuesta": 3000.0,
+      "numero": 26,
+      "saldo": 29740.0
+    },
+    {
+      "tirada": 151,
+      "apuesta": 3000.0,
+      "numero": 6,
+      "saldo": 26740.0
+    },
+    {
+      "tirada": 152,
+      "apuesta": 3000.0,
+      "numero": 34,
+      "saldo": 29740.0
+    },
+    {
+      "tirada": 153,
+      "apuesta": 3000.0,
+      "numero": 32,
+      "saldo": 32740.0
+    },
+    {
+      "tirada": 154,
+      "apuesta": 3000.0,
+      "numero": 26,
+      "saldo": 29740.0
+    },
+    {
+      "tirada": 155,
+      "apuesta": 3000.0,
+      "numero": 25,
+      "saldo": 32740.0
+    },
+    {
+      "tirada": 156,
+      "apuesta": 3000.0,
+      "numero": 8,
+      "saldo": 29740.0
+    },
+    {
+      "tirada": 157,
+      "apuesta": 3000.0,
+      "numero": 34,
+      "saldo": 32740.0
+    },
+    {
+      "tirada": 158,
+      "apuesta": 3000.0,
+      "numero": 15,
+      "saldo": 29740.0
+    },
+    {
+      "tirada": 159,
+      "apuesta": 3000.0,
+      "numero": 29,
+      "saldo": 26740.0
+    },
+    {
+      "tirada": 160,
+      "apuesta": 3000.0,
+      "numero": 29,
+      "saldo": 23740.0
+    },
+    {
+      "tirada": 161,
+      "apuesta": 3000.0,
+      "numero": 17,
+      "saldo": 20740.0
+    },
+    {
+      "tirada": 162,
+      "apuesta": 3000.0,
+      "numero": 35,
+      "saldo": 17740.0
+    },
+    {
+      "tirada": 163,
+      "apuesta": 3000.0,
+      "numero": 11,
+      "saldo": 14740.0
+    },
+    {
+      "tirada": 164,
+      "apuesta": 3000.0,
+      "numero": 5,
+      "saldo": 17740.0
+    },
+    {
+      "tirada": 165,
+      "apuesta": 3000.0,
+      "numero": 0,
+      "saldo": 16240.0
+    },
+    {
+      "tirada": 166,
+      "apuesta": 3000.0,
+      "numero": 15,
+      "saldo": 13240.0
+    },
+    {
+      "tirada": 167,
+      "apuesta": 3000.0,
+      "numero": 33,
+      "saldo": 10240.0
+    },
+    {
+      "tirada": 168,
+      "apuesta": 3000.0,
+      "numero": 9,
+      "saldo": 13240.0
+    },
+    {
+      "tirada": 169,
+      "apuesta": 3000.0,
+      "numero": 8,
+      "saldo": 10240.0
+    },
+    {
+      "tirada": 170,
+      "apuesta": 3000.0,
+      "numero": 8,
+      "saldo": 7240.0
+    },
+    {
+      "tirada": 171,
+      "apuesta": 3000.0,
+      "numero": 6,
+      "saldo": 4240.0
+    },
+    {
+      "tirada": 172,
+      "apuesta": 3000.0,
+      "numero": 5,
+      "saldo": 7240.0
+    },
+    {
+      "tirada": 173,
+      "apuesta": 3000.0,
+      "numero": 12,
+      "saldo": 10240.0
+    },
+    {
+      "tirada": 174,
+      "apuesta": 3000.0,
+      "numero": 3,
+      "saldo": 13240.0
+    },
+    {
+      "tirada": 175,
+      "apuesta": 3000.0,
+      "numero": 18,
+      "saldo": 16240.0
+    },
+    {
+      "tirada": 176,
+      "apuesta": 3000.0,
+      "numero": 3,
+      "saldo": 19240.0
+    },
+    {
+      "tirada": 177,
+      "apuesta": 3000.0,
+      "numero": 25,
+      "saldo": 22240.0
+    },
+    {
+      "tirada": 178,
+      "apuesta": 3000.0,
+      "numero": 13,
+      "saldo": 19240.0
+    },
+    {
+      "tirada": 179,
+      "apuesta": 3000.0,
+      "numero": 5,
+      "saldo": 22240.0
+    },
+    {
+      "tirada": 180,
+      "apuesta": 3000.0,
+      "numero": 19,
+      "saldo": 25240.0
+    },
+    {
+      "tirada": 181,
+      "apuesta": 3000.0,
+      "numero": 25,
+      "saldo": 28240.0
+    },
+    {
+      "tirada": 182,
+      "apuesta": 3000.0,
+      "numero": 21,
+      "saldo": 31240.0
+    },
+    {
+      "tirada": 183,
+      "apuesta": 3000.0,
+      "numero": 26,
+      "saldo": 28240.0
+    },
+    {
+      "tirada": 184,
+      "apuesta": 3000.0,
+      "numero": 20,
+      "saldo": 25240.0
+    },
+    {
+      "tirada": 185,
+      "apuesta": 3000.0,
+      "numero": 8,
+      "saldo": 22240.0
+    },
+    {
+      "tirada": 186,
+      "apuesta": 3000.0,
+      "numero": 32,
+      "saldo": 25240.0
+    },
+    {
+      "tirada": 187,
+      "apuesta": 3000.0,
+      "numero": 24,
+      "saldo": 22240.0
+    },
+    {
+      "tirada": 188,
+      "apuesta": 3000.0,
+      "numero": 1,
+      "saldo": 25240.0
+    },
+    {
+      "tirada": 189,
+      "apuesta": 3000.0,
+      "numero": 8,
+      "saldo": 22240.0
+    },
+    {
+      "tirada": 190,
+      "apuesta": 3000.0,
+      "numero": 14,
+      "saldo": 25240.0
+    },
+    {
+      "tirada": 191,
+      "apuesta": 3000.0,
+      "numero": 32,
+      "saldo": 28240.0
+    },
+    {
+      "tirada": 192,
+      "apuesta": 3000.0,
+      "numero": 21,
+      "saldo": 31240.0
+    },
+    {
+      "tirada": 193,
+      "apuesta": 3000.0,
+      "numero": 27,
+      "saldo": 34240.0
+    },
+    {
+      "tirada": 194,
+      "apuesta": 3000.0,
+      "numero": 31,
+      "saldo": 31240.0
+    },
+    {
+      "tirada": 195,
+      "apuesta": 3000.0,
+      "numero": 13,
+      "saldo": 28240.0
+    },
+    {
+      "tirada": 196,
+      "apuesta": 3000.0,
+      "numero": 12,
+      "saldo": 31240.0
+    },
+    {
+      "tirada": 197,
+      "apuesta": 3000.0,
+      "numero": 2,
+      "saldo": 28240.0
+    },
+    {
+      "tirada": 198,
+      "apuesta": 3000.0,
+      "numero": 11,
+      "saldo": 25240.0
+    },
+    {
+      "tirada": 199,
+      "apuesta": 3000.0,
+      "numero": 18,
+      "saldo": 28240.0
+    },
+    {
+      "tirada": 200,
+      "apuesta": 3000.0,
+      "numero": 31,
+      "saldo": 25240.0
+    }
+  ],
+  "mediana_maximo": 5.0,
+  "distribucion": [
+    {
+      "llegar_a": 10.0,
+      "partidas": 486427,
+      "prob_pct": 48.6427
+    },
+    {
+      "llegar_a": 20.0,
+      "partidas": 239943,
+      "prob_pct": 23.9943
+    },
+    {
+      "llegar_a": 40.0,
+      "partidas": 118406,
+      "prob_pct": 11.8406
+    },
+    {
+      "llegar_a": 80.0,
+      "partidas": 58428,
+      "prob_pct": 5.8428
+    },
+    {
+      "llegar_a": 100,
+      "partidas": 28761,
+      "prob_pct": 2.8761
+    },
+    {
+      "llegar_a": 160.0,
+      "partidas": 28761,
+      "prob_pct": 2.8761
+    },
+    {
+      "llegar_a": 320.0,
+      "partidas": 14135,
+      "prob_pct": 1.4135
+    },
+    {
+      "llegar_a": 640.0,
+      "partidas": 6987,
+      "prob_pct": 0.6987
+    },
+    {
+      "llegar_a": 1000,
+      "partidas": 3485,
+      "prob_pct": 0.3485
+    },
+    {
+      "llegar_a": 1280.0,
+      "partidas": 3485,
+      "prob_pct": 0.3485
+    },
+    {
+      "llegar_a": 2560.0,
+      "partidas": 1731,
+      "prob_pct": 0.1731
+    },
+    {
+      "llegar_a": 5120.0,
+      "partidas": 838,
+      "prob_pct": 0.0838
+    },
+    {
+      "llegar_a": 10000,
+      "partidas": 375,
+      "prob_pct": 0.0375
+    },
+    {
+      "llegar_a": 10240.0,
+      "partidas": 375,
+      "prob_pct": 0.0375
+    },
+    {
+      "llegar_a": 20480.0,
+      "partidas": 183,
+      "prob_pct": 0.0183
+    },
+    {
+      "llegar_a": 40960.0,
+      "partidas": 74,
+      "prob_pct": 0.0074
+    },
+    {
+      "llegar_a": 81920.0,
+      "partidas": 28,
+      "prob_pct": 0.0028
+    },
+    {
+      "llegar_a": 100000,
+      "partidas": 21,
+      "prob_pct": 0.0021
+    },
+    {
+      "llegar_a": 163840.0,
+      "partidas": 5,
+      "prob_pct": 0.0005
+    }
+  ],
+  "puesto_total": 5000000.0,
+  "recuperado_total": 68395.0
+}

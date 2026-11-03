@@ -19,6 +19,8 @@ limites de mesa tipicos) y hace dos experimentos:
                sectores, cada N numeros, escaleras 2-3-4...) los que mas salen y
                comprueba si siguen funcionando en tiradas nuevas.
                --datos fichero.txt analiza tiradas reales de un casino.
+  escalada     Empieza con poco dinero (--banca 5), juega la apuesta audaz sin
+               techo y apunta el maximo alcanzado en 1.000.000 de partidas.
   todo         Todo lo anterior y un informe conjunto: salida/informe_para_claude.json
 
 Ejemplos:
@@ -28,6 +30,7 @@ Ejemplos:
   python ruleta.py estrategias --mesa francesa --banca 100 --objetivo 150
 """
 import argparse
+import bisect
 import csv
 import json
 import math
@@ -1275,6 +1278,109 @@ def patrones(args):
     return informe
 
 
+# --------------------------------------------------------------------------
+# Experimento 5: empezar con poco dinero y ver hasta donde se llega
+# --------------------------------------------------------------------------
+def _partida_audaz(rng, banca, mesa, max_tiradas, guardar=False):
+    """Apuesta audaz sin techo: todo a rojo (hasta el maximo de la mesa) en cada
+    tirada. Devuelve (pico, tiradas, saldo_final, historial)."""
+    lo, hi, partage = mesa["min_exterior"], mesa["max_exterior"], mesa["partage"]
+    pico, t, hist = banca, 0, []
+    while banca >= lo and t < max_tiradas:
+        a = min(banca, hi)
+        n = rng.randrange(N)
+        if n in REDS:
+            banca += a
+        elif n == 0 and partage:
+            banca -= a / 2
+        else:
+            banca -= a
+        t += 1
+        if guardar:
+            hist.append((t, a, n, banca))
+        if banca > pico:
+            pico = banca
+    return pico, t, banca, hist
+
+
+def escalada(args):
+    mesa = MESAS[args.mesa]
+    rng = random.Random(args.semilla)
+    B = args.banca
+    print(f"\n{C['b']}== ESCALADA: empezar con {B:g} EUR ({mesa['nombre']}) =={C['r']}")
+    print(f"  Estrategia: apuesta audaz sin techo -> todo el saldo a rojo en cada tirada "
+          f"(maximo de mesa {mesa['max_exterior']:g} EUR).")
+
+    def contar(hist, titulo):
+        print(f"\n  {titulo}")
+        for t, a, n, b in hist:
+            res = "GANA" if n in REDS else ("CERO, recupera la mitad" if n == 0 and mesa["partage"]
+                                            else "pierde")
+            print(f"    tirada {t:>3}: {a:>9,.2f} EUR a rojo -> sale {n:>2} {color(n):<5} "
+                  f"{res:<24} saldo {b:>11,.2f} EUR")
+
+    # 1) Una partida en directo
+    pico, t, fin, hist = _partida_audaz(rng, B, mesa, args.max_rondas, guardar=True)
+    contar(hist, "Partida en directo (intento 1):")
+    print(f"    -> maximo alcanzado: {pico:,.2f} EUR en {t} tiradas; termina con {fin:,.2f} EUR")
+
+    # 2) Repetirla muchas veces
+    S = args.intentos
+    t0 = time.time()
+    picos = []
+    tot_final = 0.0
+    record = (0, None)
+    for i in range(S):
+        st = rng.getstate()
+        p, _, f, _ = _partida_audaz(rng, B, mesa, args.max_rondas)
+        picos.append(p)
+        tot_final += f
+        if p > record[0]:
+            record = (p, st, i + 1)
+    picos.sort()
+    umbrales = sorted({B * 2 ** k for k in range(1, 16)} | {100, 1000, 10000, 100000})
+    dist = []
+    print(f"\n  {S:,} partidas empezando con {B:g} EUR ({time.time() - t0:.0f}s):")
+    print(f"    {'llegar a':>12}  {'probabilidad':>12}   {'1 de cada':>12}")
+    for u in umbrales:
+        if u <= B:
+            continue
+        c = S - bisect.bisect_left(picos, u - 1e-9)
+        pr = c / S
+        dist.append(dict(llegar_a=u, partidas=c, prob_pct=round(100 * pr, 5)))
+        print(f"    {u:>12,.0f}  {100 * pr:>11.4f}%   "
+              f"{(f'{1 / pr:,.0f}' if pr else 'ninguna'):>12}")
+    mediana = picos[S // 2]
+    invertido = S * B
+    print(f"    mitad de las partidas no pasa de {mediana:,.2f} EUR de maximo")
+
+    # 3) La mejor partida de todas, tirada a tirada
+    rec, st, idx = record
+    rng2 = random.Random()
+    rng2.setstate(st)
+    _, t, fin, hist = _partida_audaz(rng2, B, mesa, args.max_rondas, guardar=True)
+    contar(hist[:40], f"RECORD: la mejor de {S:,} partidas (partida n.{idx:,}):")
+    if len(hist) > 40:
+        print(f"    ... ({len(hist) - 40} tiradas mas)")
+    print(f"    -> MAXIMO: {rec:,.2f} EUR (x{rec / B:,.0f}); si no se retira, acaba con {fin:,.2f} EUR")
+    print(f"\n  Cuentas de las {S:,} partidas: puestos {invertido:,.0f} EUR, "
+          f"recuperados {tot_final:,.0f} EUR -> la casa gana {invertido - tot_final:,.0f} EUR "
+          f"({100 * (invertido - tot_final) / invertido:.1f}% de lo puesto).")
+    print("  (Esto si nadie se retira en su maximo. Retirarse en un objetivo fijo es lo que "
+          "convierte el pico en dinero real.)")
+    informe = dict(mesa=args.mesa, banca_inicial=B, partidas=S, estrategia="apuesta audaz sin techo a rojo",
+                   record_eur=round(rec, 2), record_partida=idx, record_tiradas=t,
+                   record_historial=[dict(tirada=a, apuesta=b, numero=c, saldo=round(d, 2))
+                                     for a, b, c, d in hist[:200]],
+                   mediana_maximo=mediana, distribucion=dist,
+                   puesto_total=invertido, recuperado_total=round(tot_final, 2))
+    os.makedirs(args.salida, exist_ok=True)
+    with open(os.path.join(args.salida, f"escalada_{args.mesa}_{B:g}eur.json"), "w",
+              encoding="utf-8") as fj:
+        json.dump(informe, fj, ensure_ascii=False, indent=2)
+    return informe
+
+
 def todo(args):
     t = teoria()
     m1 = entrenar(args)
@@ -1306,7 +1412,7 @@ def todo(args):
 
 def main():
     ap = argparse.ArgumentParser(description="Laboratorio de ruleta europea ficticia")
-    ap.add_argument("modo", nargs="?", default="todo", choices=["todo", "entrenar", "estrategias", "optimo", "patrones"])
+    ap.add_argument("modo", nargs="?", default="todo", choices=["todo", "entrenar", "estrategias", "optimo", "patrones", "escalada"])
     ap.add_argument("--rondas", type=int, default=100_000)
     ap.add_argument("--sesgo", action="store_true", help="rueda trucada de control")
     ap.add_argument("--ver", action="store_true", help="muestra cada ronda en pantalla")
@@ -1320,13 +1426,14 @@ def main():
     ap.add_argument("--semilla", type=int, default=2026)
     ap.add_argument("--rondas-prueba", type=int, default=0,
                     help="patrones: tiradas nuevas para comprobar (por defecto = --rondas)")
+    ap.add_argument("--intentos", type=int, default=1_000_000, help="escalada: partidas a simular")
     ap.add_argument("--datos", help="archivo con tiradas reales (numeros 0-36) para el modo patrones")
     ap.add_argument("--salida", default=os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                                      "salida"))
     args = ap.parse_args()
     if os.name == "nt":
         os.system("")  # activa colores ANSI en la consola de Windows
-    {"todo": todo, "entrenar": entrenar, "estrategias": estrategias, "optimo": optimo, "patrones": patrones}[args.modo](args)
+    {"todo": todo, "entrenar": entrenar, "estrategias": estrategias, "optimo": optimo, "patrones": patrones, "escalada": escalada}[args.modo](args)
 
 
 if __name__ == "__main__":

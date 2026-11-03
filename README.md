@@ -99,4 +99,5 @@ Experimento: ruleta europea ficticia con las mismas probabilidades, pagos y limi
 - **estrategias**: Monte Carlo de martingala, D'Alembert, Fibonacci, Labouchere, Paroli, James Bond, apuesta audaz, etc., con banca, objetivo y limites de mesa.
 - **optimo**: calcula por programacion dinamica la apuesta optima para cada banca.
 - **patrones**: busca entre 1.808 "dibujos" (caballos, cuadros, cruces, diagonales, sectores del cilindro, cada N numeros, escaleras 2-3-4...) los que mas salen y comprueba si siguen funcionando en tiradas nuevas. Con `--datos tiradas.txt` analiza tiradas reales apuntadas en un casino.
+- **escalada**: empieza con 5 EUR, juega la apuesta audaz sin techo y apunta el maximo alcanzado en 1.000.000 de partidas.
 - Informe completo para analizar: `ruleta/salida/informe_para_claude.json`. Conclusiones en [`ruleta/ESTRATEGIA.md`](ruleta/ESTRATEGIA.md).
