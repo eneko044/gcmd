@@ -231,3 +231,37 @@ casa se queda el 98,6 %. El maximo solo es dinero real si **te retiras al
 llegar a una meta fija**, y la probabilidad de llegar a una meta X empezando
 con 5 EUR es como mucho 5/X (el valor de un juego justo), un poco menos por
 la ventaja de la casa.
+
+## 8. El "dibujo" en el tapete con mas probabilidad de salir
+
+`python ruleta.py dibujo --rondas 1000000 --fichas 5 --zona 19-30`
+(imagen: `salida/dibujos_justa.png`)
+
+Se observan 1.000.000 de tiradas para ver donde cae la bola. Con eso se
+busca el mejor dibujo de cada tipo con 5 fichas de 1 EUR (sin que las fichas
+se pisen) y se comprueba en otro 1.000.000 de tiradas nuevas.
+
+Donde cae la bola: todos los numeros salen entre el 2,66 % y el 2,74 %
+(esperado: 2,70 %). El test de uniformidad da p = 0,24, asi que son
+diferencias de puro azar.
+
+| Dibujo (5 fichas) | Numeros | Acierta (tiradas nuevas) | Teorico | Si acierta | Resultado |
+|---|---|---|---|---|---|
+| De 2 en 2 (caballos) | 10 | 26,99 % | 27,03 % | +13 EUR | -2,83 % |
+| Mezcla de 4 en 4 y de 2 en 2 | 16 | 43,18 % | 43,24 % | +4 o +13 EUR | -2,92 % |
+| De 4 en 4 (cuadros) | 20 | 54,08 % | 54,05 % | +4 EUR | -2,66 % |
+| Zona 19-30 (2 cuadros + 2 caballos, 4 fichas) | 12 | 32,42 % | 32,43 % | +5 o +14 EUR | -2,73 % |
+| **De 6 en 6 (seisenas)** | **30** | **81,08 %** | 81,08 % | +1 EUR | -2,71 % |
+
+* **El dibujo que mas sale en cada tirada son las seisenas** (de 6 en 6):
+  con 5 fichas cubres 30 numeros y aciertas el 81 % de las tiradas. Pero
+  cuando aciertas ganas solo +1 EUR, y cuando fallas pierdes 5.
+* La probabilidad de acertar depende **solo de cuantos numeros cubres**
+  (numeros / 37), no de la forma del dibujo ni de la zona. Los dibujos
+  elegidos con los numeros "mas salidos" aciertan en tiradas nuevas lo mismo
+  que dice la teoria.
+* Todos pierden lo mismo por euro: alrededor del -2,7 %.
+* Grupo de control (`--sesgo`): en la rueda trucada el buscador encuentra los
+  numeros defectuosos (2, 6, 17, 25, 34) y el dibujo de 2 en 2 gana un
+  **+17 %** en tiradas nuevas. Si la ruleta tuviera numeros preferidos, el
+  dibujo los encontraria.

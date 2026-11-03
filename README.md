@@ -100,4 +100,5 @@ Experimento: ruleta europea ficticia con las mismas probabilidades, pagos y limi
 - **optimo**: calcula por programacion dinamica la apuesta optima para cada banca.
 - **patrones**: busca entre 1.808 "dibujos" (caballos, cuadros, cruces, diagonales, sectores del cilindro, cada N numeros, escaleras 2-3-4...) los que mas salen y comprueba si siguen funcionando en tiradas nuevas. Con `--datos tiradas.txt` analiza tiradas reales apuntadas en un casino.
 - **escalada**: empieza con 5 EUR, juega la apuesta audaz sin techo y apunta el maximo alcanzado en 1.000.000 de partidas.
+- **dibujo**: observa 1.000.000 de tiradas, busca el dibujo en el tapete (de 2 en 2, de 4 en 4, mezcla, una zona, de 6 en 6) con mas probabilidad de acertar, lo comprueba con tiradas nuevas y lo pinta en `ruleta/salida/dibujos_justa.svg`.
 - Informe completo para analizar: `ruleta/salida/informe_para_claude.json`. Conclusiones en [`ruleta/ESTRATEGIA.md`](ruleta/ESTRATEGIA.md).

@@ -21,6 +21,9 @@ limites de mesa tipicos) y hace dos experimentos:
                --datos fichero.txt analiza tiradas reales de un casino.
   escalada     Empieza con poco dinero (--banca 5), juega la apuesta audaz sin
                techo y apunta el maximo alcanzado en 1.000.000 de partidas.
+  dibujo       Observa 1.000.000 de tiradas, busca el dibujo (de 2 en 2, de 4 en
+               4, mezcla, una zona, de 6 en 6) que mas sale, lo comprueba con
+               otras 1.000.000 y lo pinta sobre el tapete (salida/dibujos_*.svg).
   todo         Todo lo anterior y un informe conjunto: salida/informe_para_claude.json
 
 Ejemplos:
@@ -1381,6 +1384,233 @@ def escalada(args):
     return informe
 
 
+# --------------------------------------------------------------------------
+# Experimento 6: el "dibujo" en el tapete con mas probabilidad de acertar
+# --------------------------------------------------------------------------
+def apuestas_interiores():
+    """Todas las apuestas legales de 2, 3, 4 y 6 numeros sobre el tapete."""
+    out = []
+    for n in range(1, 37):
+        if n % 3:
+            out.append(("caballo", frozenset({n, n + 1})))
+        if n <= 33:
+            out.append(("caballo", frozenset({n, n + 3})))
+        if n % 3 and n <= 32:
+            out.append(("cuadro", frozenset({n, n + 1, n + 3, n + 4})))
+    for r in range(12):
+        a = 3 * r + 1
+        out.append(("transversal", frozenset(range(a, a + 3))))
+        if r < 11:
+            out.append(("seisena", frozenset(range(a, a + 6))))
+    return out
+
+
+def nombre_apuesta(tipo, s):
+    return f"{tipo} {'-'.join(map(str, sorted(s)))}"
+
+
+def buscar_dibujo(cuentas, composicion, zona=None, ancho=400):
+    """Busqueda en haz: elige apuestas que no se pisen, con la composicion pedida
+    (p.ej. {'cuadro': 3, 'caballo': 2}), que mas tiradas observadas cubran."""
+    todas = [(t, s) for t, s in apuestas_interiores()
+             if t in composicion and (zona is None or s <= zona)]
+    peso = {i: sum(cuentas[n] for n in s) for i, (t, s) in enumerate(todas)}
+    haz = [(0, frozenset(), (), dict(composicion), -1)]
+    for _ in range(sum(composicion.values())):
+        nuevo = []
+        for sc, cub, elegidas, resto, ult in haz:
+            for i in range(ult + 1, len(todas)):
+                t, s = todas[i]
+                if resto.get(t, 0) <= 0 or cub & s:
+                    continue
+                r2 = dict(resto)
+                r2[t] -= 1
+                nuevo.append((sc + peso[i], cub | s, elegidas + (i,), r2, i))
+        if not nuevo:
+            break
+        nuevo.sort(key=lambda x: -x[0])
+        haz = nuevo[:ancho]
+    mejor = haz[0]
+    return [todas[i] for i in mejor[2]]
+
+
+def _evaluar_dibujo(apuestas, cuentas, R):
+    """Aciertos y beneficio con 1 ficha de 1 EUR por apuesta."""
+    cubre = set().union(*[s for _, s in apuestas])
+    hits = sum(cuentas[n] for n in cubre)
+    cobro = sum(cuentas[n] * sum(36 // len(s) for _, s in apuestas if n in s) for n in cubre)
+    coste = len(apuestas) * R
+    return hits, cobro - coste
+
+
+def _tapete_ascii(cuentas, R, marcados=frozenset()):
+    lineas = []
+    for fila in (3, 2, 1):
+        celdas = []
+        for c in range(12):
+            n = 3 * c + fila
+            pct = 100 * cuentas[n] / R
+            celdas.append(f"{'[' if n in marcados else ' '}{n:>2} {pct:4.2f}%{']' if n in marcados else ' '}")
+        lineas.append("    " + "|".join(celdas))
+    lineas.insert(0, f"    cero: {100 * cuentas[0] / R:.2f}%")
+    return "\n".join(lineas)
+
+
+def _svg_tapete(paneles, ruta):
+    W, H, Z, M = 52, 46, 40, 20
+    ancho = M * 2 + Z + 12 * W
+    alto_panel = 3 * H + 92
+    alto = len(paneles) * alto_panel + 20
+    col = {"rojo": "#c0392b", "negro": "#222", "verde": "#1e8449"}
+    o = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{ancho}" height="{alto}" '
+         f'viewBox="0 0 {ancho} {alto}" font-family="DejaVu Sans, Arial, sans-serif">',
+         f'<rect width="{ancho}" height="{alto}" fill="#0b3d2e"/>']
+
+    def es(t):          # formato espanol solo en los numeros: 1.000.000 y 2,70%
+        import re
+        tr = str.maketrans({",": ".", ".": ","})
+        return re.sub(r"\d[\d,.]*\d", lambda m: m.group(0).translate(tr), t)
+
+    def centro(n, x0, y0):
+        if n == 0:
+            return x0 + Z / 2, y0 + 1.5 * H
+        c, r = (n - 1) // 3, 2 - (n - 1) % 3
+        return x0 + Z + c * W + W / 2, y0 + r * H + H / 2
+
+    for k, p in enumerate(paneles):
+        y0 = 10 + k * alto_panel + 48
+        x0 = M
+        o.append(f'<text x="{M}" y="{y0 - 30}" fill="#fff" font-size="16" font-weight="bold">'
+                 f'{es(p["titulo"])}</text>')
+        o.append(f'<text x="{M}" y="{y0 - 11}" fill="#cfe9dc" font-size="12">{es(p["sub"])}</text>')
+        cub = p.get("cubre")
+        frec = p.get("frec")
+        for n in range(N):
+            if n == 0:
+                x, y, w, h = x0, y0, Z, 3 * H
+            else:
+                c, r = (n - 1) // 3, 2 - (n - 1) % 3
+                x, y, w, h = x0 + Z + c * W, y0 + r * H, W, H
+            activo = cub is None or n in cub
+            op = 1.0 if activo else 0.18
+            o.append(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" fill="{col[color(n)]}" '
+                     f'fill-opacity="{op}" stroke="#e8e8e8" stroke-width="1"/>')
+            cx, cy = x + w / 2, y + h / 2
+            o.append(f'<text x="{cx}" y="{cy + (-3 if frec else 5)}" fill="#fff" fill-opacity="{max(op, .45)}" '
+                     f'font-size="14" font-weight="bold" text-anchor="middle">{n}</text>')
+            if frec:
+                d = frec[n] - 100 / N
+                tono = "#ffd166" if d > 0 else "#9ad1ff"
+                o.append(f'<text x="{cx}" y="{cy + 12}" fill="{tono}" font-size="9.5" '
+                         f'text-anchor="middle">{es(f"{frec[n]:.3f}")}%</text>')
+        for t, s in p.get("apuestas", []):
+            if t in ("seisena", "transversal"):
+                cmin = (min(s) - 1) // 3
+                cx = x0 + Z + (cmin + (1 if t == "seisena" else 0.5)) * W
+                cy = y0 + 3 * H
+            else:
+                pts = [centro(n, x0, y0) for n in s]
+                cx = sum(a for a, _ in pts) / len(pts)
+                cy = sum(b for _, b in pts) / len(pts)
+            o.append(f'<circle cx="{cx}" cy="{cy}" r="11" fill="#f1c40f" stroke="#7d5a00" '
+                     f'stroke-width="2.5" stroke-dasharray="3 2"/>')
+            o.append(f'<text x="{cx}" y="{cy + 4}" font-size="10" font-weight="bold" '
+                     f'text-anchor="middle" fill="#3b2a00">1</text>')
+        if p.get("pie"):
+            o.append(f'<text x="{M}" y="{y0 + 3 * H + 30}" fill="#fff" font-size="12">{es(p["pie"])}</text>')
+    o.append("</svg>")
+    with open(ruta, "w", encoding="utf-8") as f:
+        f.write("\n".join(o))
+
+
+def dibujo(args):
+    rng = random.Random(args.semilla + 77)
+    rueda = Rueda(rng, SESGO_CONTROL if args.sesgo else None)
+    R = args.rondas
+    obs, chk = [0] * N, [0] * N
+    for _ in range(R):
+        obs[rueda.girar()] += 1
+    for _ in range(R):
+        chk[rueda.girar()] += 1
+    tag = "sesgada" if args.sesgo else "justa"
+    frec = [100 * c / R for c in obs]
+    print(f"\n{C['b']}== DIBUJO EN EL TAPETE: {R:,} tiradas observadas + {R:,} de comprobacion "
+          f"(rueda {tag}) =={C['r']}")
+    print("  Donde ha caido la bola (porcentaje de veces que sale cada numero; azar = 2,70%):")
+    print(_tapete_ascii(obs, R))
+    orden = sorted(range(N), key=lambda n: -obs[n])
+    _, pval = chi2_uniformidad(obs, R)
+    print(f"  Test de uniformidad: p = {pval:.3f} "
+          f"({'diferencias normales del azar' if pval > 0.01 else 'SESGO DETECTADO'})")
+    print(f"  Mas salidos: {', '.join(f'{n} ({frec[n]:.3f}%)' for n in orden[:6])}")
+    print(f"  Menos salidos: {', '.join(f'{n} ({frec[n]:.3f}%)' for n in orden[-6:])}")
+
+    F = args.fichas
+    lo, hi = (int(x) for x in args.zona.split("-"))
+    zona = frozenset(range(lo, hi + 1))
+    nz = max(1, F - 1)
+    planes = [
+        ("De 2 en 2 (caballos)", {"caballo": F}, None),
+        ("De 4 en 4 (cuadros)", {"cuadro": F}, None),
+        ("Mezcla de 4 en 4 y de 2 en 2", {"cuadro": F - F // 2, "caballo": F // 2}, None),
+        (f"Tu zona {lo}-{hi}: cuadros + caballos", {"cuadro": (nz + 1) // 2, "caballo": nz // 2}, zona),
+        ("Maxima probabilidad: de 6 en 6 (seisenas)", {"seisena": min(F, 6)}, None),
+    ]
+    res = []
+    paneles = [dict(titulo=f"Donde cae la bola en {R:,} tiradas",
+                    sub="Porcentaje de cada numero. Amarillo: por encima del 2.703% esperado; azul: por debajo.",
+                    frec=frec, pie=(f"Mas salido: {orden[0]} ({frec[orden[0]]:.3f}%). Menos: {orden[-1]} "
+                                    f"({frec[orden[-1]]:.3f}%). Uniformidad: p = {pval:.2f}, "
+                                    + ("diferencias de puro azar." if pval > 0.01 else "RUEDA SESGADA.")))]
+    print(f"\n  Los mejores dibujos con {F} fichas de 1 EUR (elegidos con las tiradas observadas "
+          f"y comprobados con tiradas nuevas):")
+    print(f"  {'dibujo':<44}{'fichas':>7}{'numeros':>8}{'acierta (obs)':>14}{'acierta (nuevas)':>17}"
+          f"{'teorico':>9}{'ROI nuevas':>12}")
+    for titulo, comp, z in planes:
+        ap = buscar_dibujo(obs, comp, z)
+        if not ap:
+            continue
+        cubre = frozenset().union(*[s for _, s in ap])
+        f = len(ap)
+        h1, _ = _evaluar_dibujo(ap, obs, R)
+        h2, ben2 = _evaluar_dibujo(ap, chk, R)
+        teo = len(cubre) / N
+        cobros = sorted({sum(36 // len(s) for _, s in ap if n in s) for n in cubre})
+        res.append(dict(dibujo=titulo, fichas=f, apuestas=[nombre_apuesta(t, s) for t, s in ap],
+                        numeros=sorted(cubre), num_numeros=len(cubre),
+                        acierto_observado_pct=round(100 * h1 / R, 3),
+                        acierto_comprobacion_pct=round(100 * h2 / R, 3),
+                        acierto_teorico_pct=round(100 * teo, 3),
+                        roi_comprobacion_pct=round(100 * ben2 / (f * R), 3),
+                        cobro_si_acierta_eur=cobros))
+        x = res[-1]
+        print(f"  {titulo[:44]:<44}{f:>7}{len(cubre):>8}{x['acierto_observado_pct']:>13.2f}%"
+              f"{x['acierto_comprobacion_pct']:>16.2f}%{100 * teo:>8.2f}%{x['roi_comprobacion_pct']:>11.2f}%")
+        print(f"      fichas en: {', '.join(x['apuestas'])}")
+        gan = " o ".join(f"+{c - f}" for c in cobros)
+        print(f"      si sale uno de sus {len(cubre)} numeros cobras {' o '.join(map(str, cobros))} EUR "
+              f"(ganas {gan} EUR); si no, pierdes {f} EUR")
+        paneles.append(dict(
+            titulo=f"{titulo} - {f} fichas, {len(cubre)} numeros",
+            sub=(f"Acierta el {x['acierto_comprobacion_pct']:.2f}% de las tiradas nuevas "
+                 f"(teorico {100 * teo:.2f}%). Si acierta: ganas {gan} EUR. Si falla: -{f} EUR."),
+            cubre=cubre, apuestas=ap,
+            pie=f"Resultado en {R:,} tiradas nuevas: {x['roi_comprobacion_pct']:+.2f}% de lo apostado "
+                f"(la casa: -2.70%)."))
+    os.makedirs(args.salida, exist_ok=True)
+    svg = os.path.join(args.salida, f"dibujos_{tag}.svg")
+    _svg_tapete(paneles, svg)
+    print(f"\n  Probabilidad de acertar = numeros cubiertos / 37, sea cual sea la forma del dibujo.")
+    print(f"  Imagen del tapete con los dibujos: {svg}")
+    informe = dict(rueda=tag, tiradas_observadas=R, tiradas_comprobacion=R,
+                   frecuencias_pct={str(n): round(frec[n], 4) for n in range(N)},
+                   mas_salidos=orden[:6], menos_salidos=orden[-6:], fichas=F, zona=args.zona,
+                   dibujos=res, imagen=svg)
+    with open(os.path.join(args.salida, f"dibujos_{tag}.json"), "w", encoding="utf-8") as fj:
+        json.dump(informe, fj, ensure_ascii=False, indent=2)
+    return informe
+
+
 def todo(args):
     t = teoria()
     m1 = entrenar(args)
@@ -1412,7 +1642,7 @@ def todo(args):
 
 def main():
     ap = argparse.ArgumentParser(description="Laboratorio de ruleta europea ficticia")
-    ap.add_argument("modo", nargs="?", default="todo", choices=["todo", "entrenar", "estrategias", "optimo", "patrones", "escalada"])
+    ap.add_argument("modo", nargs="?", default="todo", choices=["todo", "entrenar", "estrategias", "optimo", "patrones", "escalada", "dibujo"])
     ap.add_argument("--rondas", type=int, default=100_000)
     ap.add_argument("--sesgo", action="store_true", help="rueda trucada de control")
     ap.add_argument("--ver", action="store_true", help="muestra cada ronda en pantalla")
@@ -1427,13 +1657,15 @@ def main():
     ap.add_argument("--rondas-prueba", type=int, default=0,
                     help="patrones: tiradas nuevas para comprobar (por defecto = --rondas)")
     ap.add_argument("--intentos", type=int, default=1_000_000, help="escalada: partidas a simular")
+    ap.add_argument("--fichas", type=int, default=5, help="dibujo: fichas de 1 EUR por tirada")
+    ap.add_argument("--zona", default="19-30", help="dibujo: zona del tapete, p.ej. 19-30")
     ap.add_argument("--datos", help="archivo con tiradas reales (numeros 0-36) para el modo patrones")
     ap.add_argument("--salida", default=os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                                      "salida"))
     args = ap.parse_args()
     if os.name == "nt":
         os.system("")  # activa colores ANSI en la consola de Windows
-    {"todo": todo, "entrenar": entrenar, "estrategias": estrategias, "optimo": optimo, "patrones": patrones, "escalada": escalada}[args.modo](args)
+    {"todo": todo, "entrenar": entrenar, "estrategias": estrategias, "optimo": optimo, "patrones": patrones, "escalada": escalada, "dibujo": dibujo}[args.modo](args)
 
 
 if __name__ == "__main__":
