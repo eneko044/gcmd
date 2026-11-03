@@ -1,0 +1,137 @@
+{
+  "mesa": "online",
+  "banca": 20,
+  "objetivo": 100,
+  "p_optima_pct": 19.266,
+  "p_audaz_pct": 18.586,
+  "p_plana_pct": 0.878,
+  "p_juego_justo_pct": 20.0,
+  "politica": [
+    {
+      "banca": 1,
+      "apuesta": "pleno",
+      "importe": 1,
+      "p_objetivo_pct": 0.95,
+      "p_objetivo_audaz_pct": 0.82
+    },
+    {
+      "banca": 7,
+      "apuesta": "pleno",
+      "importe": 2,
+      "p_objetivo_pct": 6.7,
+      "p_objetivo_audaz_pct": 6.25
+    },
+    {
+      "banca": 13,
+      "apuesta": "pleno",
+      "importe": 2,
+      "p_objetivo_pct": 12.47,
+      "p_objetivo_audaz_pct": 11.94
+    },
+    {
+      "banca": 19,
+      "apuesta": "pleno",
+      "importe": 2,
+      "p_objetivo_pct": 18.28,
+      "p_objetivo_audaz_pct": 17.64
+    },
+    {
+      "banca": 20,
+      "apuesta": "pleno",
+      "importe": 2,
+      "p_objetivo_pct": 19.27,
+      "p_objetivo_audaz_pct": 18.59
+    },
+    {
+      "banca": 25,
+      "apuesta": "pleno",
+      "importe": 2,
+      "p_objetivo_pct": 24.13,
+      "p_objetivo_audaz_pct": 23.67
+    },
+    {
+      "banca": 31,
+      "apuesta": "docena/columna",
+      "importe": 1,
+      "p_objetivo_pct": 30.02,
+      "p_objetivo_audaz_pct": 29.31
+    },
+    {
+      "banca": 37,
+      "apuesta": "pleno",
+      "importe": 1,
+      "p_objetivo_pct": 35.99,
+      "p_objetivo_audaz_pct": 35.26
+    },
+    {
+      "banca": 43,
+      "apuesta": "pleno",
+      "importe": 1,
+      "p_objetivo_pct": 41.83,
+      "p_objetivo_audaz_pct": 41.25
+    },
+    {
+      "banca": 49,
+      "apuesta": "pleno",
+      "importe": 1,
+      "p_objetivo_pct": 47.74,
+      "p_objetivo_audaz_pct": 47.51
+    },
+    {
+      "banca": 55,
+      "apuesta": "sencilla (rojo/negro...)",
+      "importe": 1,
+      "p_objetivo_pct": 53.72,
+      "p_objetivo_audaz_pct": 53.29
+    },
+    {
+      "banca": 61,
+      "apuesta": "pleno",
+      "importe": 1,
+      "p_objetivo_pct": 59.73,
+      "p_objetivo_audaz_pct": 59.21
+    },
+    {
+      "banca": 67,
+      "apuesta": "sencilla (rojo/negro...)",
+      "importe": 1,
+      "p_objetivo_pct": 65.69,
+      "p_objetivo_audaz_pct": 65.19
+    },
+    {
+      "banca": 73,
+      "apuesta": "sencilla (rojo/negro...)",
+      "importe": 1,
+      "p_objetivo_pct": 71.76,
+      "p_objetivo_audaz_pct": 71.41
+    },
+    {
+      "banca": 79,
+      "apuesta": "sencilla (rojo/negro...)",
+      "importe": 1,
+      "p_objetivo_pct": 77.82,
+      "p_objetivo_audaz_pct": 77.51
+    },
+    {
+      "banca": 85,
+      "apuesta": "docena/columna",
+      "importe": 1,
+      "p_objetivo_pct": 83.97,
+      "p_objetivo_audaz_pct": 83.7
+    },
+    {
+      "banca": 91,
+      "apuesta": "sencilla (rojo/negro...)",
+      "importe": 9,
+      "p_objetivo_pct": 90.2,
+      "p_objetivo_audaz_pct": 90.04
+    },
+    {
+      "banca": 97,
+      "apuesta": "sencilla (rojo/negro...)",
+      "importe": 3,
+      "p_objetivo_pct": 96.6,
+      "p_objetivo_audaz_pct": 96.55
+    }
+  ]
+}

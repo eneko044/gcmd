@@ -88,3 +88,14 @@ Una cabeza en 3D (renderizada por software dentro de la consola, con luces de es
 Al abrirlo sale tu camara con un ovalo: pon la cara dentro, relajada y mirando al frente, y se calibra sola (aprende el color de tu piel frente al fondo y donde tienes los ojos, las cejas y la boca). Funciona con vision por ordenador clasica, sin instalar nada. Sin camara hace una demostracion.
 
 **Teclas:** ESPACIO recalibrar, TAB ver/ocultar tu camara, C cambiar de estilo (5 cabezas), G invertir izquierda/derecha, K cambiar de camara, D demostracion, H ayuda, +/- detalle, ESC salir.
+
+---
+
+# RULETA LAB
+
+Experimento: ruleta europea ficticia con las mismas probabilidades, pagos y limites de mesa que una real. Doble clic en **`RULETA_LAB.bat`** (necesita Python 3) o `python ruleta/ruleta.py todo`.
+
+- **entrenar**: gira la ruleta N rondas. 7 modelos (numero caliente, frio, Markov, sector del cilindro, red neuronal...) intentan predecir el siguiente numero y 3 modelos intentan predecir el color. Cada ronda queda en `ruleta/salida/rondas_*.csv`: numero, aciertos de cada modelo, tasa acumulada y test de uniformidad. `--ver` lo muestra en directo y `--sesgo` usa una rueda trucada como grupo de control.
+- **estrategias**: Monte Carlo de martingala, D'Alembert, Fibonacci, Labouchere, Paroli, James Bond, apuesta audaz, etc., con banca, objetivo y limites de mesa.
+- **optimo**: calcula por programacion dinamica la apuesta optima para cada banca.
+- Informe completo para analizar: `ruleta/salida/informe_para_claude.json`. Conclusiones en [`ruleta/ESTRATEGIA.md`](ruleta/ESTRATEGIA.md).

@@ -1,0 +1,13 @@
+estrategia;descripcion;p_objetivo_pct;p_ruina_pct;p_acaba_ganando_pct;resultado_medio_simulado;esperanza_exacta_sesion;desviacion_sesion;mediana;peor_5pct;mejor_5pct;apostado_medio;rondas_medias;ventaja_casa_efectiva_pct;esperanza_100_sesiones;p_ganando_tras_10_sesiones_pct;p_ganando_tras_100_sesiones_pct;p_ganando_tras_1000_sesiones_pct
+no_jugar;No apostar (referencia);0.0;0.0;0.0;0.0;0.0;0.0;0.0;0.0;0.0;0.0;0.0;0.0;0.0;0.0;0.0;0.0
+plano_rojo;Siempre la minima a rojo;40.08;20.24;49.13;-9.59;-9.371;59.94;0.0;-100.0;52.5;693.45;138.7;1.351;-937.1;31.1;5.9;0.0
+plano_pleno;Siempre la minima a pleno al 17;46.8;18.56;53.05;-2.89;-3.486;67.27;16.0;-100.0;73.0;128.99;129.0;2.703;-348.6;43.5;30.2;5.1
+dos_docenas;Minima a 2a y 3a docena (cubre 24 numeros);44.2;45.09;46.3;-24.45;-24.372;70.13;-35.0;-100.0;50.0;901.78;90.2;2.703;-2437.2;13.6;0.0;0.0
+martingala;"Rojo; dobla tras perder, vuelve a la minima al ganar";64.37;35.63;64.37;-2.96;-3.116;72.21;50.0;-100.0;52.5;230.57;19.2;1.351;-311.6;44.6;33.3;8.6
+dalembert;"Rojo; +1 unidad tras perder, -1 tras ganar";63.0;37.0;63.0;-3.79;-3.811;73.75;50.0;-100.0;60.0;282.0;19.4;1.351;-381.1;43.5;30.3;5.1
+fibonacci;"Rojo; avanza en Fibonacci al perder, retrocede 2 al ganar";62.69;37.26;62.72;-5.27;-4.792;72.97;50.0;-100.0;52.5;354.61;40.1;1.351;-479.2;41.8;25.6;1.9
+labouchere;"Rojo; lista 1-2-3-4, apuesta extremos, tacha al ganar";64.69;35.31;64.69;-1.98;-2.163;72.5;50.0;-100.0;60.0;160.08;5.3;1.351;-216.3;46.2;38.3;17.3
+paroli;"Rojo; dobla tras ganar (max 3 seguidas), minima al perder";59.34;38.48;59.8;-6.05;-6.574;74.78;50.0;-100.0;65.0;486.45;57.6;1.351;-657.4;39.1;19.0;0.3
+james_bond;14 a pasa (19-36), 5 a seisena 13-18, 1 al 0;56.81;43.14;56.82;-11.74;-10.177;75.63;50.0;-99.55;58.0;579.48;29.4;1.756;-1017.7;33.5;8.9;0.0
+seguir_caliente;Minima a pleno al numero que mas sale en la sesion;45.86;18.51;52.39;-3.8;-3.521;67.04;16.0;-100.0;72.0;130.29;130.3;2.703;-352.1;43.4;30.0;4.8
+apuesta_audaz;"Rojo; apuesta justo lo que falta para el objetivo (o todo si no llega)";66.3;33.7;66.3;-0.55;-1.369;70.9;50.0;-100.0;50.0;101.27;2.0;1.351;-136.9;47.6;42.3;27.1

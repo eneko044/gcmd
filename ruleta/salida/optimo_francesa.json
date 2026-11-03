@@ -1,0 +1,123 @@
+{
+  "mesa": "francesa",
+  "banca": 100,
+  "objetivo": 150,
+  "p_optima_pct": 65.792,
+  "p_audaz_pct": 65.753,
+  "p_plana_pct": 55.907,
+  "p_juego_justo_pct": 66.667,
+  "politica": [
+    {
+      "banca": 5,
+      "apuesta": "pleno",
+      "importe": 4,
+      "p_objetivo_pct": 3.22,
+      "p_objetivo_audaz_pct": 3.06
+    },
+    {
+      "banca": 15,
+      "apuesta": "pleno",
+      "importe": 3,
+      "p_objetivo_pct": 9.68,
+      "p_objetivo_audaz_pct": 9.5
+    },
+    {
+      "banca": 25,
+      "apuesta": "pleno",
+      "importe": 3,
+      "p_objetivo_pct": 16.15,
+      "p_objetivo_audaz_pct": 15.98
+    },
+    {
+      "banca": 35,
+      "apuesta": "pleno",
+      "importe": 1,
+      "p_objetivo_pct": 22.64,
+      "p_objetivo_audaz_pct": 22.6
+    },
+    {
+      "banca": 45,
+      "apuesta": "sencilla (rojo/negro...)",
+      "importe": 30,
+      "p_objetivo_pct": 29.22,
+      "p_objetivo_audaz_pct": 29.13
+    },
+    {
+      "banca": 55,
+      "apuesta": "sencilla (rojo/negro...)",
+      "importe": 20,
+      "p_objetivo_pct": 35.79,
+      "p_objetivo_audaz_pct": 35.77
+    },
+    {
+      "banca": 65,
+      "apuesta": "sencilla (rojo/negro...)",
+      "importe": 10,
+      "p_objetivo_pct": 42.46,
+      "p_objetivo_audaz_pct": 42.44
+    },
+    {
+      "banca": 75,
+      "apuesta": "sencilla (rojo/negro...)",
+      "importe": 75,
+      "p_objetivo_pct": 49.31,
+      "p_objetivo_audaz_pct": 49.3
+    },
+    {
+      "banca": 85,
+      "apuesta": "sencilla (rojo/negro...)",
+      "importe": 65,
+      "p_objetivo_pct": 55.85,
+      "p_objetivo_audaz_pct": 55.78
+    },
+    {
+      "banca": 95,
+      "apuesta": "sencilla (rojo/negro...)",
+      "importe": 55,
+      "p_objetivo_pct": 62.46,
+      "p_objetivo_audaz_pct": 62.43
+    },
+    {
+      "banca": 100,
+      "apuesta": "sencilla (rojo/negro...)",
+      "importe": 50,
+      "p_objetivo_pct": 65.79,
+      "p_objetivo_audaz_pct": 65.75
+    },
+    {
+      "banca": 105,
+      "apuesta": "sencilla (rojo/negro...)",
+      "importe": 45,
+      "p_objetivo_pct": 69.15,
+      "p_objetivo_audaz_pct": 69.12
+    },
+    {
+      "banca": 115,
+      "apuesta": "sencilla (rojo/negro...)",
+      "importe": 35,
+      "p_objetivo_pct": 75.96,
+      "p_objetivo_audaz_pct": 75.92
+    },
+    {
+      "banca": 125,
+      "apuesta": "sencilla (rojo/negro...)",
+      "importe": 25,
+      "p_objetivo_pct": 82.66,
+      "p_objetivo_audaz_pct": 82.64
+    },
+    {
+      "banca": 135,
+      "apuesta": "sencilla (rojo/negro...)",
+      "importe": 15,
+      "p_objetivo_pct": 89.5,
+      "p_objetivo_audaz_pct": 89.49
+    },
+    {
+      "banca": 145,
+      "apuesta": "sencilla (rojo/negro...)",
+      "importe": 5,
+      "p_objetivo_pct": 96.42,
+      "p_objetivo_audaz_pct": 96.42
+    }
+  ]
+}
