@@ -98,4 +98,5 @@ Experimento: ruleta europea ficticia con las mismas probabilidades, pagos y limi
 - **entrenar**: gira la ruleta N rondas. 7 modelos (numero caliente, frio, Markov, sector del cilindro, red neuronal...) intentan predecir el siguiente numero y 3 modelos intentan predecir el color. Cada ronda queda en `ruleta/salida/rondas_*.csv`: numero, aciertos de cada modelo, tasa acumulada y test de uniformidad. `--ver` lo muestra en directo y `--sesgo` usa una rueda trucada como grupo de control.
 - **estrategias**: Monte Carlo de martingala, D'Alembert, Fibonacci, Labouchere, Paroli, James Bond, apuesta audaz, etc., con banca, objetivo y limites de mesa.
 - **optimo**: calcula por programacion dinamica la apuesta optima para cada banca.
+- **patrones**: busca entre 1.808 "dibujos" (caballos, cuadros, cruces, diagonales, sectores del cilindro, cada N numeros, escaleras 2-3-4...) los que mas salen y comprueba si siguen funcionando en tiradas nuevas. Con `--datos tiradas.txt` analiza tiradas reales apuntadas en un casino.
 - Informe completo para analizar: `ruleta/salida/informe_para_claude.json`. Conclusiones en [`ruleta/ESTRATEGIA.md`](ruleta/ESTRATEGIA.md).

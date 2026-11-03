@@ -1,0 +1,565 @@
+{
+  "rueda": "sesgada_100000",
+  "tiradas_entreno": 100000,
+  "tiradas_prueba": 100000,
+  "num_dibujos": 1808,
+  "significativos_en_entreno": 726,
+  "resumen_mejores": {
+    "top_1": {
+      "roi_entreno_medio_pct": 42.62,
+      "roi_prueba_medio_pct": 43.77
+    },
+    "top_10": {
+      "roi_entreno_medio_pct": 33.5,
+      "roi_prueba_medio_pct": 34.7
+    },
+    "top_50": {
+      "roi_entreno_medio_pct": 19.65,
+      "roi_prueba_medio_pct": 20.09
+    },
+    "top_200": {
+      "roi_entreno_medio_pct": 12.07,
+      "roi_prueba_medio_pct": 12.25
+    }
+  },
+  "mejores_15": [
+    {
+      "dibujo": "sector de 5 en el cilindro centrado en 17",
+      "numeros": [
+        2,
+        6,
+        17,
+        25,
+        34
+      ],
+      "k": 5,
+      "roi_entreno_pct": 42.62,
+      "z_entreno": 58.22,
+      "roi_prueba_pct": 43.77,
+      "z_prueba": 59.7
+    },
+    {
+      "dibujo": "sector de 7 en el cilindro centrado en 17",
+      "numeros": [
+        2,
+        6,
+        17,
+        21,
+        25,
+        27,
+        34
+      ],
+      "k": 7,
+      "roi_entreno_pct": 27.83,
+      "z_entreno": 47.94,
+      "roi_prueba_pct": 28.35,
+      "z_prueba": 48.75
+    },
+    {
+      "dibujo": "sector de 7 en el cilindro centrado en 34",
+      "numeros": [
+        2,
+        6,
+        13,
+        17,
+        25,
+        27,
+        34
+      ],
+      "k": 7,
+      "roi_entreno_pct": 27.82,
+      "z_entreno": 47.92,
+      "roi_prueba_pct": 28.37,
+      "z_prueba": 48.78
+    },
+    {
+      "dibujo": "sector de 7 en el cilindro centrado en 25",
+      "numeros": [
+        2,
+        4,
+        6,
+        17,
+        21,
+        25,
+        34
+      ],
+      "k": 7,
+      "roi_entreno_pct": 27.22,
+      "z_entreno": 46.98,
+      "roi_prueba_pct": 28.35,
+      "z_prueba": 48.74
+    },
+    {
+      "dibujo": "sector de 5 en el cilindro centrado en 34",
+      "numeros": [
+        6,
+        17,
+        25,
+        27,
+        34
+      ],
+      "k": 5,
+      "roi_entreno_pct": 32.09,
+      "z_entreno": 44.7,
+      "roi_prueba_pct": 32.6,
+      "z_prueba": 45.35
+    },
+    {
+      "dibujo": "sector de 5 en el cilindro centrado en 25",
+      "numeros": [
+        2,
+        17,
+        21,
+        25,
+        34
+      ],
+      "k": 5,
+      "roi_entreno_pct": 31.57,
+      "z_entreno": 44.03,
+      "roi_prueba_pct": 33.21,
+      "z_prueba": 46.14
+    },
+    {
+      "dibujo": "sector de 3 en el cilindro centrado en 25",
+      "numeros": [
+        2,
+        17,
+        25
+      ],
+      "k": 3,
+      "roi_entreno_pct": 42.85,
+      "z_entreno": 43.98,
+      "roi_prueba_pct": 44.85,
+      "z_prueba": 45.91
+    },
+    {
+      "dibujo": "sector de 3 en el cilindro centrado en 34",
+      "numeros": [
+        6,
+        17,
+        34
+      ],
+      "k": 3,
+      "roi_entreno_pct": 42.15,
+      "z_entreno": 43.3,
+      "roi_prueba_pct": 43.99,
+      "z_prueba": 45.08
+    },
+    {
+      "dibujo": "sector de 3 en el cilindro centrado en 17",
+      "numeros": [
+        17,
+        25,
+        34
+      ],
+      "k": 3,
+      "roi_entreno_pct": 41.17,
+      "z_entreno": 42.35,
+      "roi_prueba_pct": 43.53,
+      "z_prueba": 44.64
+    },
+    {
+      "dibujo": "sector de 9 en el cilindro centrado en 6",
+      "numeros": [
+        2,
+        6,
+        11,
+        13,
+        17,
+        25,
+        27,
+        34,
+        36
+      ],
+      "k": 9,
+      "roi_entreno_pct": 19.65,
+      "z_entreno": 41.18,
+      "roi_prueba_pct": 19.98,
+      "z_prueba": 41.8
+    },
+    {
+      "dibujo": "sector de 9 en el cilindro centrado en 25",
+      "numeros": [
+        2,
+        4,
+        6,
+        17,
+        19,
+        21,
+        25,
+        27,
+        34
+      ],
+      "k": 9,
+      "roi_entreno_pct": 19.5,
+      "z_entreno": 40.9,
+      "roi_prueba_pct": 19.94,
+      "z_prueba": 41.73
+    },
+    {
+      "dibujo": "sector de 9 en el cilindro centrado en 2",
+      "numeros": [
+        2,
+        4,
+        6,
+        15,
+        17,
+        19,
+        21,
+        25,
+        34
+      ],
+      "k": 9,
+      "roi_entreno_pct": 19.28,
+      "z_entreno": 40.51,
+      "roi_prueba_pct": 19.75,
+      "z_prueba": 41.38
+    },
+    {
+      "dibujo": "sector de 9 en el cilindro centrado en 34",
+      "numeros": [
+        2,
+        6,
+        13,
+        17,
+        21,
+        25,
+        27,
+        34,
+        36
+      ],
+      "k": 9,
+      "roi_entreno_pct": 19.22,
+      "z_entreno": 40.4,
+      "roi_prueba_pct": 19.62,
+      "z_prueba": 41.14
+    },
+    {
+      "dibujo": "sector de 9 en el cilindro centrado en 17",
+      "numeros": [
+        2,
+        4,
+        6,
+        13,
+        17,
+        21,
+        25,
+        27,
+        34
+      ],
+      "k": 9,
+      "roi_entreno_pct": 19.13,
+      "z_entreno": 40.23,
+      "roi_prueba_pct": 19.8,
+      "z_prueba": 41.46
+    },
+    {
+      "dibujo": "combinacion de 2 #65",
+      "numeros": [
+        2,
+        34
+      ],
+      "k": 2,
+      "roi_entreno_pct": 43.14,
+      "z_entreno": 35.61,
+      "roi_prueba_pct": 45.26,
+      "z_prueba": 37.26
+    }
+  ],
+  "aprendizaje_continuo_roi_pct": {
+    "mejor_z": 43.27,
+    "mejor_roi": 45.79
+  },
+  "mas_elegidos": [
+    [
+      "sector de 5 en el cilindro centrado en 17",
+      195
+    ]
+  ],
+  "dinamicos": [
+    {
+      "dibujo": "ultimos_1_distintos",
+      "descripcion": "Cubre los 1 ultimos numeros distintos que han salido",
+      "tiradas_jugadas": 100000,
+      "tasa_acierto_pct": 2.77,
+      "roi_pct": -0.14,
+      "z": 1.39
+    },
+    {
+      "dibujo": "ultimos_3_distintos",
+      "descripcion": "Cubre los 3 ultimos numeros distintos que han salido",
+      "tiradas_jugadas": 100000,
+      "tasa_acierto_pct": 8.47,
+      "roi_pct": 1.66,
+      "z": 4.22
+    },
+    {
+      "dibujo": "ultimos_6_distintos",
+      "descripcion": "Cubre los 6 ultimos numeros distintos que han salido",
+      "tiradas_jugadas": 100000,
+      "tasa_acierto_pct": 16.99,
+      "roi_pct": 1.95,
+      "z": 6.65
+    },
+    {
+      "dibujo": "ultimos_12_distintos",
+      "descripcion": "Cubre los 12 ultimos numeros distintos que han salido",
+      "tiradas_jugadas": 100000,
+      "tasa_acierto_pct": 33.58,
+      "roi_pct": 0.75,
+      "z": 7.77
+    },
+    {
+      "dibujo": "vecinos_ultimo_3",
+      "descripcion": "Sector de 3 casillas del cilindro alrededor del ultimo numero",
+      "tiradas_jugadas": 100000,
+      "tasa_acierto_pct": 8.25,
+      "roi_pct": -0.98,
+      "z": 1.67
+    },
+    {
+      "dibujo": "vecinos_ultimo_5",
+      "descripcion": "Sector de 5 casillas del cilindro alrededor del ultimo numero",
+      "tiradas_jugadas": 100000,
+      "tasa_acierto_pct": 13.63,
+      "roi_pct": -1.88,
+      "z": 1.06
+    },
+    {
+      "dibujo": "vecinos_ultimo_9",
+      "descripcion": "Sector de 9 casillas del cilindro alrededor del ultimo numero",
+      "tiradas_jugadas": 100000,
+      "tasa_acierto_pct": 24.39,
+      "roi_pct": -2.46,
+      "z": 0.45
+    },
+    {
+      "dibujo": "espejo_5",
+      "descripcion": "Sector de 5 casillas en el lado opuesto del cilindro al ultimo numero",
+      "tiradas_jugadas": 100000,
+      "tasa_acierto_pct": 13.58,
+      "roi_pct": -2.2,
+      "z": 0.65
+    },
+    {
+      "dibujo": "calientes_1",
+      "descripcion": "Los 1 numeros que mas han salido en las ultimas 200 tiradas",
+      "tiradas_jugadas": 100000,
+      "tasa_acierto_pct": 3.52,
+      "roi_pct": 26.86,
+      "z": 16.02
+    },
+    {
+      "dibujo": "calientes_3",
+      "descripcion": "Los 3 numeros que mas han salido en las ultimas 200 tiradas",
+      "tiradas_jugadas": 100000,
+      "tasa_acierto_pct": 10.04,
+      "roi_pct": 20.52,
+      "z": 22.42
+    },
+    {
+      "dibujo": "calientes_6",
+      "descripcion": "Los 6 numeros que mas han salido en las ultimas 200 tiradas",
+      "tiradas_jugadas": 100000,
+      "tasa_acierto_pct": 18.8,
+      "roi_pct": 12.81,
+      "z": 22.18
+    },
+    {
+      "dibujo": "calientes_12",
+      "descripcion": "Los 12 numeros que mas han salido en las ultimas 200 tiradas",
+      "tiradas_jugadas": 100000,
+      "tasa_acierto_pct": 35.49,
+      "roi_pct": 6.47,
+      "z": 20.66
+    },
+    {
+      "dibujo": "frios_3",
+      "descripcion": "Los 3 numeros que menos han salido en las ultimas 200 tiradas",
+      "tiradas_jugadas": 100000,
+      "tasa_acierto_pct": 7.71,
+      "roi_pct": -7.43,
+      "z": -4.57
+    },
+    {
+      "dibujo": "frios_6",
+      "descripcion": "Los 6 numeros que menos han salido en las ultimas 200 tiradas",
+      "tiradas_jugadas": 100000,
+      "tasa_acierto_pct": 15.28,
+      "roi_pct": -8.33,
+      "z": -8.05
+    },
+    {
+      "dibujo": "frios_12",
+      "descripcion": "Los 12 numeros que menos han salido en las ultimas 200 tiradas",
+      "tiradas_jugadas": 100000,
+      "tasa_acierto_pct": 30.47,
+      "roi_pct": -8.6,
+      "z": -13.28
+    },
+    {
+      "dibujo": "docena_del_ultimo",
+      "descripcion": "Cubre la docena del ultimo numero (12 numeros)",
+      "tiradas_jugadas": 97522,
+      "tasa_acierto_pct": 32.66,
+      "roi_pct": -2.03,
+      "z": 1.51
+    },
+    {
+      "dibujo": "escalera_2-3-4_calientes",
+      "descripcion": "Cubre 2-3-4 numeros (mas calientes): sube un escalon al fallar, vuelve al primero al acertar",
+      "tiradas_jugadas": 100000,
+      "tasa_acierto_pct": 11.96,
+      "roi_pct": 17.98,
+      "z": 22.23
+    },
+    {
+      "dibujo": "escalera_2-3-4_vecinos",
+      "descripcion": "Cubre 2-3-4 numeros (vecinos del ultimo): sube un escalon al fallar, vuelve al primero al acertar",
+      "tiradas_jugadas": 100000,
+      "tasa_acierto_pct": 10.15,
+      "roi_pct": -1.25,
+      "z": 1.57
+    },
+    {
+      "dibujo": "escalera_1-2-3-4-6-8_calientes",
+      "descripcion": "Cubre 1-2-3-4-6-8 numeros (mas calientes): sube un escalon al fallar, vuelve al primero al acertar",
+      "tiradas_jugadas": 100000,
+      "tasa_acierto_pct": 14.94,
+      "roi_pct": 13.82,
+      "z": 20.54
+    }
+  ],
+  "cubrir_mas_numeros": [
+    {
+      "numeros": 1,
+      "prob_acierto_pct": 2.7,
+      "gana_si_acierta": 35,
+      "pierde_si_falla": 1,
+      "ev_por_tirada": -0.027,
+      "p_ganando_50_pct": 39.3,
+      "p_ganando_200_pct": 45.6,
+      "p_ganando_1000_pct": 45.1
+    },
+    {
+      "numeros": 2,
+      "prob_acierto_pct": 5.41,
+      "gana_si_acierta": 34,
+      "pierde_si_falla": 2,
+      "ev_por_tirada": -0.054,
+      "p_ganando_50_pct": 51.2,
+      "p_ganando_200_pct": 39.7,
+      "p_ganando_1000_pct": 41.2
+    },
+    {
+      "numeros": 3,
+      "prob_acierto_pct": 8.11,
+      "gana_si_acierta": 33,
+      "pierde_si_falla": 3,
+      "ev_por_tirada": -0.081,
+      "p_ganando_50_pct": 38.2,
+      "p_ganando_200_pct": 45.6,
+      "p_ganando_1000_pct": 38.4
+    },
+    {
+      "numeros": 4,
+      "prob_acierto_pct": 10.81,
+      "gana_si_acierta": 32,
+      "pierde_si_falla": 4,
+      "ev_por_tirada": -0.108,
+      "p_ganando_50_pct": 45.9,
+      "p_ganando_200_pct": 41.0,
+      "p_ganando_1000_pct": 36.1
+    },
+    {
+      "numeros": 6,
+      "prob_acierto_pct": 16.22,
+      "gana_si_acierta": 30,
+      "pierde_si_falla": 6,
+      "ev_por_tirada": -0.162,
+      "p_ganando_50_pct": 42.4,
+      "p_ganando_200_pct": 41.1,
+      "p_ganando_1000_pct": 35.2
+    },
+    {
+      "numeros": 8,
+      "prob_acierto_pct": 21.62,
+      "gana_si_acierta": 28,
+      "pierde_si_falla": 8,
+      "ev_por_tirada": -0.216,
+      "p_ganando_50_pct": 39.5,
+      "p_ganando_200_pct": 40.9,
+      "p_ganando_1000_pct": 31.3
+    },
+    {
+      "numeros": 12,
+      "prob_acierto_pct": 32.43,
+      "gana_si_acierta": 24,
+      "pierde_si_falla": 12,
+      "ev_por_tirada": -0.324,
+      "p_ganando_50_pct": 45.9,
+      "p_ganando_200_pct": 39.9,
+      "p_ganando_1000_pct": 26.7
+    },
+    {
+      "numeros": 18,
+      "prob_acierto_pct": 48.65,
+      "gana_si_acierta": 18,
+      "pierde_si_falla": 18,
+      "ev_por_tirada": -0.486,
+      "p_ganando_50_pct": 36.9,
+      "p_ganando_200_pct": 32.5,
+      "p_ganando_1000_pct": 18.8
+    },
+    {
+      "numeros": 24,
+      "prob_acierto_pct": 64.86,
+      "gana_si_acierta": 12,
+      "pierde_si_falla": 24,
+      "ev_por_tirada": -0.649,
+      "p_ganando_50_pct": 38.1,
+      "p_ganando_200_pct": 29.0,
+      "p_ganando_1000_pct": 11.8
+    },
+    {
+      "numeros": 30,
+      "prob_acierto_pct": 81.08,
+      "gana_si_acierta": 6,
+      "pierde_si_falla": 30,
+      "ev_por_tirada": -0.811,
+      "p_ganando_50_pct": 37.8,
+      "p_ganando_200_pct": 21.9,
+      "p_ganando_1000_pct": 3.2
+    },
+    {
+      "numeros": 32,
+      "prob_acierto_pct": 86.49,
+      "gana_si_acierta": 4,
+      "pierde_si_falla": 32,
+      "ev_por_tirada": -0.865,
+      "p_ganando_50_pct": 31.5,
+      "p_ganando_200_pct": 17.5,
+      "p_ganando_1000_pct": 1.3
+    },
+    {
+      "numeros": 35,
+      "prob_acierto_pct": 94.59,
+      "gana_si_acierta": 1,
+      "pierde_si_falla": 35,
+      "ev_por_tirada": -0.946,
+      "p_ganando_50_pct": 24.0,
+      "p_ganando_200_pct": 3.8,
+      "p_ganando_1000_pct": 0.0
+    },
+    {
+      "numeros": 36,
+      "prob_acierto_pct": 97.3,
+      "gana_si_acierta": 0,
+      "pierde_si_falla": 36,
+      "ev_por_tirada": -0.973,
+      "p_ganando_50_pct": 0.0,
+      "p_ganando_200_pct": 0.0,
+      "p_ganando_1000_pct": 0.0
+    }
+  ]
+}

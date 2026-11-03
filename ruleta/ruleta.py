@@ -15,6 +15,10 @@ limites de mesa tipicos) y hace dos experimentos:
                con banca, objetivo y limites de mesa reales.
   optimo       Aprende por programacion dinamica la apuesta optima para cada banca
                (maxima probabilidad de llegar al objetivo).
+  patrones     Busca entre miles de dibujos (caballos, cuadros, cruces, diagonales,
+               sectores, cada N numeros, escaleras 2-3-4...) los que mas salen y
+               comprueba si siguen funcionando en tiradas nuevas.
+               --datos fichero.txt analiza tiradas reales de un casino.
   todo         Todo lo anterior y un informe conjunto: salida/informe_para_claude.json
 
 Ejemplos:
@@ -910,6 +914,367 @@ def optimo(args):
     return informe
 
 
+# --------------------------------------------------------------------------
+# Experimento 4: buscar "dibujos" de numeros que salgan mas (pattern mining)
+# --------------------------------------------------------------------------
+# Se apuesta 1 EUR a cada numero del dibujo (minimo de pleno en casino), asi
+# que un dibujo de k numeros cuesta k EUR por tirada y si acierta cobra 36.
+VOISINS = [22, 18, 29, 7, 28, 12, 35, 3, 26, 0, 32, 15, 19, 4, 21, 2, 25]
+TIERS = [27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33]
+ORPHELINS = [1, 20, 14, 31, 9, 17, 34, 6]
+JEU_ZERO = [12, 35, 3, 26, 0, 32, 15]
+
+
+def catalogo_patrones(rng, azar_por_k=80):
+    pats = {}
+
+    def add(nombre, nums):
+        s = frozenset(nums)
+        if 0 < len(s) < N and s not in pats:
+            pats[s] = nombre
+
+    for n in range(N):
+        add(f"pleno {n}", [n])
+    for n in range(1, 37):
+        if n % 3:
+            add(f"caballo {n}-{n + 1}", [n, n + 1])
+        if n <= 33:
+            add(f"caballo {n}-{n + 3}", [n, n + 3])
+    for z in (1, 2, 3):
+        add(f"caballo 0-{z}", [0, z])
+    add("transversal 0-1-2", [0, 1, 2])
+    add("transversal 0-2-3", [0, 2, 3])
+    add("cuadro 0-1-2-3", [0, 1, 2, 3])
+    for r in range(12):
+        a = 3 * r + 1
+        add(f"transversal {a}-{a + 2}", range(a, a + 3))
+        if r < 11:
+            add(f"seisena {a}-{a + 5}", range(a, a + 6))
+        if r < 10:
+            add(f"diagonal {a}-{a + 4}-{a + 8}", [a, a + 4, a + 8])
+            add(f"diagonal {a + 2}-{a + 4}-{a + 6}", [a + 2, a + 4, a + 6])
+    for n in range(1, 33):
+        if n % 3:
+            add(f"cuadro {n}-{n + 1}-{n + 3}-{n + 4}", [n, n + 1, n + 3, n + 4])
+    for n in range(5, 33, 3):
+        add(f"cruz en {n}", [n, n - 1, n + 1, n - 3, n + 3])
+    for d in (1, 2, 3):
+        add(f"docena {d}", DOC[d])
+        add(f"columna {d}", [n for n in range(1, 37) if columna(n) == d])
+    for nombre, s in (("rojo", ROJO), ("negro", NEGRO), ("par", PAR), ("impar", IMPAR),
+                      ("falta 1-18", FALTA), ("pasa 19-36", PASA)):
+        add(nombre, s)
+    for k in range(2, 10):
+        for o in range(k):
+            add(f"cada {k} numeros (resto {o})", [n for n in range(1, 37) if n % k == o])
+    for d in range(10):
+        add(f"terminados en {d}", [n for n in range(N) if n % 10 == d])
+    for w in (3, 5, 7, 9, 13, 17):
+        for i in range(N):
+            add(f"sector de {w} en el cilindro centrado en {WHEEL[i]}",
+                [WHEEL[(i + j) % N] for j in range(-(w // 2), w // 2 + 1)])
+    add("vecinos del cero", VOISINS)
+    add("tercio del cilindro", TIERS)
+    add("huerfanos", ORPHELINS)
+    add("juego cero", JEU_ZERO)
+    for k in range(2, 19):
+        for t in range(azar_por_k):
+            add(f"combinacion de {k} #{t}", rng.sample(range(N), k))
+    return [(nombre, s) for s, nombre in pats.items()]
+
+
+def _eval_estatico(s, cuentas, R):
+    k = len(s)
+    H = sum(cuentas[n] for n in s)
+    p = k / N
+    roi = (36 * H - k * R) / (k * R)
+    z = (H - R * p) / math.sqrt(R * p * (1 - p))
+    return roi, z, H
+
+
+# Dibujos que cambian segun lo que va saliendo
+class Adaptativo:
+    nombre, desc = "", ""
+
+    def __init__(self):
+        self.h = []
+        self.win = [0] * N            # cuentas de las ultimas 200 tiradas
+
+    def ver(self, n, gano):
+        self.h.append(n)
+        self.win[n] += 1
+        if len(self.h) > 200:
+            self.win[self.h.pop(0)] -= 1
+
+    def _top(self, k, frios=False):
+        orden = sorted(range(N), key=lambda x: (self.win[x], x), reverse=not frios)
+        return orden[:k]
+
+    def _sector(self, centro, k):
+        i = POS[centro]
+        return [WHEEL[(i + j) % N] for j in range(-(k // 2), k - k // 2)]
+
+
+class UltimosK(Adaptativo):
+    def __init__(self, k):
+        super().__init__()
+        self.k = k
+        self.nombre = f"ultimos_{k}_distintos"
+        self.desc = f"Cubre los {k} ultimos numeros distintos que han salido"
+
+    def cubrir(self):
+        out = []
+        for n in reversed(self.h):
+            if n not in out:
+                out.append(n)
+            if len(out) == self.k:
+                break
+        return out
+
+
+class VecinosUltimo(Adaptativo):
+    def __init__(self, k):
+        super().__init__()
+        self.k = k
+        self.nombre = f"vecinos_ultimo_{k}"
+        self.desc = f"Sector de {k} casillas del cilindro alrededor del ultimo numero"
+
+    def cubrir(self):
+        return self._sector(self.h[-1], self.k) if self.h else []
+
+
+class Espejo(Adaptativo):
+    nombre, desc = "espejo_5", "Sector de 5 casillas en el lado opuesto del cilindro al ultimo numero"
+
+    def cubrir(self):
+        if not self.h:
+            return []
+        return self._sector(WHEEL[(POS[self.h[-1]] + 18) % N], 5)
+
+
+class Calientes(Adaptativo):
+    def __init__(self, k, frios=False):
+        super().__init__()
+        self.k, self.frios = k, frios
+        self.nombre = f"{'frios' if frios else 'calientes'}_{k}"
+        self.desc = (f"Los {k} numeros que {'menos' if frios else 'mas'} han salido "
+                     f"en las ultimas 200 tiradas")
+
+    def cubrir(self):
+        return self._top(self.k, self.frios) if len(self.h) >= 37 else []
+
+
+class MismaDocena(Adaptativo):
+    nombre, desc = "docena_del_ultimo", "Cubre la docena del ultimo numero (12 numeros)"
+
+    def cubrir(self):
+        if not self.h or self.h[-1] == 0:
+            return []
+        return list(DOC[docena(self.h[-1])])
+
+
+class Escalera(Adaptativo):
+    """Dibujo en escalera: 2 numeros, si falla 3, si falla 4 ... y al acertar vuelve a 2."""
+
+    def __init__(self, pasos, modo):
+        super().__init__()
+        self.pasos, self.modo, self.i = pasos, modo, 0
+        txt = "-".join(map(str, pasos))
+        self.nombre = f"escalera_{txt}_{modo}"
+        self.desc = (f"Cubre {txt} numeros ({'mas calientes' if modo == 'calientes' else 'vecinos del ultimo'})"
+                     f": sube un escalon al fallar, vuelve al primero al acertar")
+
+    def cubrir(self):
+        k = self.pasos[self.i]
+        if self.modo == "calientes":
+            return self._top(k) if len(self.h) >= 37 else []
+        return self._sector(self.h[-1], k) if self.h else []
+
+    def ver(self, n, gano):
+        super().ver(n, gano)
+        if gano is not None:
+            self.i = 0 if gano else min(self.i + 1, len(self.pasos) - 1)
+
+
+def adaptativos():
+    return ([UltimosK(k) for k in (1, 3, 6, 12)] +
+            [VecinosUltimo(k) for k in (3, 5, 9)] + [Espejo()] +
+            [Calientes(k) for k in (1, 3, 6, 12)] +
+            [Calientes(k, frios=True) for k in (3, 6, 12)] + [MismaDocena()] +
+            [Escalera([2, 3, 4], "calientes"), Escalera([2, 3, 4], "vecinos"),
+             Escalera([1, 2, 3, 4, 6, 8], "calientes")])
+
+
+def _binom_cola(n, p, umbral):
+    """P(X > umbral), X ~ Bin(n, p), exacta en escala logaritmica."""
+    m = math.floor(umbral) + 1
+    if m <= 0:
+        return 1.0
+    if m > n:
+        return 0.0
+    lp, lq = math.log(p), math.log1p(-p)
+    tot = 0.0
+    for x in range(m, n + 1):
+        tot += math.exp(math.lgamma(n + 1) - math.lgamma(x + 1) - math.lgamma(n - x + 1)
+                        + x * lp + (n - x) * lq)
+    return min(1.0, tot)
+
+
+def _cargar_tiradas(ruta):
+    nums = []
+    with open(ruta, encoding="utf-8") as f:
+        for tok in f.read().replace(";", " ").replace(",", " ").split():
+            if tok.isdigit() and 0 <= int(tok) <= 36:
+                nums.append(int(tok))
+    if len(nums) < 200:
+        sys.exit(f"{ruta}: hacen falta al menos 200 tiradas (encontradas {len(nums)})")
+    return nums
+
+
+def patrones(args):
+    rng = random.Random(args.semilla)
+    if args.datos:
+        tiradas = _cargar_tiradas(args.datos)
+        tag = "datos_" + os.path.splitext(os.path.basename(args.datos))[0]
+    else:
+        rueda = Rueda(random.Random(args.semilla + 31), SESGO_CONTROL if args.sesgo else None)
+        prueba_n = args.rondas_prueba or args.rondas
+        tiradas = [rueda.girar() for _ in range(args.rondas + prueba_n)]
+        tag = f"{'sesgada' if args.sesgo else 'justa'}_{args.rondas}"
+    mitad = len(tiradas) // 2 if args.datos else args.rondas
+    entreno, prueba = tiradas[:mitad], tiradas[mitad:]
+    R1, R2 = len(entreno), len(prueba)
+    c1, c2 = [0] * N, [0] * N
+    for n in entreno:
+        c1[n] += 1
+    for n in prueba:
+        c2[n] += 1
+
+    cat = catalogo_patrones(rng)
+    print(f"\n{C['b']}== PATRONES / DIBUJOS: rueda {tag} =={C['r']}")
+    print(f"  {len(cat)} dibujos distintos. Se buscan en {R1} tiradas (entrenamiento) y se "
+          f"comprueban en {R2} tiradas nuevas (prueba). 1 EUR por numero cubierto.")
+
+    filas = []
+    for nombre, s in cat:
+        r1, z1, _ = _eval_estatico(s, c1, R1)
+        r2, z2, _ = _eval_estatico(s, c2, R2)
+        filas.append(dict(dibujo=nombre, numeros=sorted(s), k=len(s), roi_entreno_pct=round(100 * r1, 2),
+                          z_entreno=round(z1, 2), roi_prueba_pct=round(100 * r2, 2),
+                          z_prueba=round(z2, 2)))
+    pos = sum(f["z_entreno"] > 1.96 for f in filas)
+    print(f"  En entrenamiento {pos} dibujos ({100 * pos / len(filas):.1f}%) salen 'significativos' "
+          f"(z>1.96). Por puro azar se esperan ~2.5%.")
+
+    def top(clave, cuantos):
+        return sorted(filas, key=lambda f: f[clave], reverse=True)[:cuantos]
+
+    print(f"\n  Los 15 mejores dibujos en ENTRENAMIENTO y que pasa con ellos en tiradas NUEVAS:")
+    print(f"  {'dibujo':<46}{'k':>3}{'ROI entreno':>13}{'z':>7}{'ROI prueba':>12}{'z':>7}")
+    for f in top("z_entreno", 15):
+        print(f"  {f['dibujo'][:46]:<46}{f['k']:>3}{f['roi_entreno_pct']:>12.2f}%{f['z_entreno']:>7.2f}"
+              f"{f['roi_prueba_pct']:>11.2f}%{f['z_prueba']:>7.2f}")
+    resumen_top = {}
+    for q in (1, 10, 50, 200):
+        t = top("z_entreno", q)
+        resumen_top[f"top_{q}"] = dict(
+            roi_entreno_medio_pct=round(statistics.mean(f["roi_entreno_pct"] for f in t), 2),
+            roi_prueba_medio_pct=round(statistics.mean(f["roi_prueba_pct"] for f in t), 2))
+    print("\n  Media de los mejores:   " + "   ".join(
+        f"top {q}: entreno {v['roi_entreno_medio_pct']:+.2f}% -> prueba {v['roi_prueba_medio_pct']:+.2f}%"
+        for q, v in zip((1, 10, 50, 200), resumen_top.values())))
+
+    # Aprendizaje continuo: cada 1000 tiradas elige el mejor dibujo hasta ahora y lo juega
+    B = 1000
+    bloques = [tiradas[i:i + B] for i in range(0, len(tiradas), B)]
+    acum = [0] * N
+    vistos = 0
+    wf = {"mejor_z": [0.0, 0.0], "mejor_roi": [0.0, 0.0]}
+    elegidos = Counter()
+    for b, bloque in enumerate(bloques):
+        cb = [0] * N
+        for n in bloque:
+            cb[n] += 1
+        if b >= 5:
+            mz = max(cat, key=lambda p: _eval_estatico(p[1], acum, vistos)[1])
+            mr = max(cat, key=lambda p: _eval_estatico(p[1], acum, vistos)[0])
+            for clave, (nombre, s) in (("mejor_z", mz), ("mejor_roi", mr)):
+                k = len(s)
+                H = sum(cb[n] for n in s)
+                wf[clave][0] += 36 * H - k * len(bloque)
+                wf[clave][1] += k * len(bloque)
+            elegidos[mz[0]] += 1
+        for n in range(N):
+            acum[n] += cb[n]
+        vistos += len(bloque)
+    print(f"\n  Aprendizaje continuo (cada {B} tiradas juega el dibujo que mejor va hasta ese momento):")
+    wf_res = {}
+    for clave, (ben, ap) in wf.items():
+        wf_res[clave] = round(100 * ben / ap, 2) if ap else 0.0
+        print(f"    eligiendo por {clave:<10} ROI real = {wf_res[clave]:+.2f}%")
+    print("    dibujos que mas veces eligio: " + ", ".join(f"{n} ({c})" for n, c in elegidos.most_common(4)))
+
+    # Dibujos que cambian segun lo que sale, jugados en las tiradas de prueba
+    print(f"\n  Dibujos dinamicos (cambian cada tirada segun lo que va saliendo), en {R2} tiradas nuevas:")
+    print(f"  {'dibujo':<36}{'acierta':>9}{'ROI':>9}{'z':>7}")
+    ad_res = []
+    for a in adaptativos():
+        for n in entreno[-200:]:
+            a.ver(n, None)
+        ben = ap = jug = acier = 0
+        esper = 0.0
+        for n in prueba:
+            cub = a.cubrir()
+            gano = None
+            if cub:
+                k = len(cub)
+                gano = n in cub
+                ben += (36 if gano else 0) - k
+                ap += k
+                jug += 1
+                acier += gano
+                esper += k / N
+            a.ver(n, gano)
+        z = (acier - esper) / math.sqrt(max(esper * (1 - esper / max(jug, 1)), 1e-9))
+        roi = 100 * ben / ap if ap else 0.0
+        ad_res.append(dict(dibujo=a.nombre, descripcion=a.desc, tiradas_jugadas=jug,
+                           tasa_acierto_pct=round(100 * acier / max(jug, 1), 2),
+                           roi_pct=round(roi, 2), z=round(z, 2)))
+        print(f"  {a.nombre:<36}{100 * acier / max(jug, 1):>8.2f}%{roi:>8.2f}%{z:>7.2f}")
+
+    # Ganar poco pero a menudo: cubrir mas numeros
+    print("\n  Cubrir mas numeros = aciertas mas a menudo pero cobras menos (1 EUR por numero):")
+    print(f"  {'numeros':>8}{'acierta':>9}{'gana si acierta':>17}{'pierde si falla':>17}"
+          f"{'EV/tirada':>11}   P(ir ganando tras 50 / 200 / 1000 tiradas)")
+    compromiso = []
+    for k in (1, 2, 3, 4, 6, 8, 12, 18, 24, 30, 32, 35, 36):
+        p = k / N
+        pg = [_binom_cola(n, p, k * n / 36) for n in (50, 200, 1000)]
+        compromiso.append(dict(numeros=k, prob_acierto_pct=round(100 * p, 2), gana_si_acierta=36 - k,
+                               pierde_si_falla=k, ev_por_tirada=round(-k / N, 3),
+                               p_ganando_50_pct=round(100 * pg[0], 1),
+                               p_ganando_200_pct=round(100 * pg[1], 1),
+                               p_ganando_1000_pct=round(100 * pg[2], 1)))
+        print(f"  {k:>8}{100 * p:>8.1f}%{36 - k:>14} EUR{k:>14} EUR{-k / N:>10.3f}"
+              f"   {100 * pg[0]:5.1f}% / {100 * pg[1]:5.1f}% / {100 * pg[2]:5.1f}%")
+
+    informe = dict(rueda=tag, tiradas_entreno=R1, tiradas_prueba=R2, num_dibujos=len(filas),
+                   significativos_en_entreno=pos, resumen_mejores=resumen_top,
+                   mejores_15=top("z_entreno", 15), aprendizaje_continuo_roi_pct=wf_res,
+                   mas_elegidos=elegidos.most_common(10), dinamicos=ad_res,
+                   cubrir_mas_numeros=compromiso)
+    os.makedirs(args.salida, exist_ok=True)
+    with open(os.path.join(args.salida, f"patrones_{tag}.json"), "w", encoding="utf-8") as fj:
+        json.dump(informe, fj, ensure_ascii=False, indent=2)
+    with open(os.path.join(args.salida, f"patrones_{tag}.csv"), "w", newline="", encoding="utf-8") as fc:
+        w = csv.DictWriter(fc, fieldnames=list(filas[0].keys()), delimiter=";")
+        w.writeheader()
+        for f in sorted(filas, key=lambda f: f["z_entreno"], reverse=True):
+            w.writerow({**f, "numeros": " ".join(map(str, f["numeros"]))})
+    print(f"  Guardado en {args.salida}/patrones_{tag}.json / .csv")
+    return informe
+
+
 def todo(args):
     t = teoria()
     m1 = entrenar(args)
@@ -922,8 +1287,17 @@ def todo(args):
         a3.mesa = mesa
         es[mesa] = estrategias(a3)
         op[mesa] = optimo(a3)
+    a4 = argparse.Namespace(**vars(args))
+    a4.sesgo = False
+    p1 = patrones(a4)
+    a4.rondas, a4.rondas_prueba = 500, 100_000
+    p0 = patrones(a4)
+    a4.rondas, a4.rondas_prueba, a4.sesgo = args.rondas, 0, True
+    p2 = patrones(a4)
     informe = dict(teoria=t, modelos_rueda_justa=m1, modelos_rueda_sesgada_control=m2,
-                   estrategias=es, estrategia_optima=op)
+                   estrategias=es, estrategia_optima=op,
+                   patrones_rueda_justa=p1, patrones_500_tiradas_vs_100000_nuevas=p0,
+                   patrones_rueda_sesgada_control=p2)
     ruta = os.path.join(args.salida, "informe_para_claude.json")
     with open(ruta, "w", encoding="utf-8") as fj:
         json.dump(informe, fj, ensure_ascii=False, indent=2)
@@ -932,7 +1306,7 @@ def todo(args):
 
 def main():
     ap = argparse.ArgumentParser(description="Laboratorio de ruleta europea ficticia")
-    ap.add_argument("modo", nargs="?", default="todo", choices=["todo", "entrenar", "estrategias", "optimo"])
+    ap.add_argument("modo", nargs="?", default="todo", choices=["todo", "entrenar", "estrategias", "optimo", "patrones"])
     ap.add_argument("--rondas", type=int, default=100_000)
     ap.add_argument("--sesgo", action="store_true", help="rueda trucada de control")
     ap.add_argument("--ver", action="store_true", help="muestra cada ronda en pantalla")
@@ -944,12 +1318,15 @@ def main():
     ap.add_argument("--max-rondas", type=int, default=200)
     ap.add_argument("--sesiones", type=int, default=10_000)
     ap.add_argument("--semilla", type=int, default=2026)
+    ap.add_argument("--rondas-prueba", type=int, default=0,
+                    help="patrones: tiradas nuevas para comprobar (por defecto = --rondas)")
+    ap.add_argument("--datos", help="archivo con tiradas reales (numeros 0-36) para el modo patrones")
     ap.add_argument("--salida", default=os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                                      "salida"))
     args = ap.parse_args()
     if os.name == "nt":
         os.system("")  # activa colores ANSI en la consola de Windows
-    {"todo": todo, "entrenar": entrenar, "estrategias": estrategias, "optimo": optimo}[args.modo](args)
+    {"todo": todo, "entrenar": entrenar, "estrategias": estrategias, "optimo": optimo, "patrones": patrones}[args.modo](args)
 
 
 if __name__ == "__main__":

@@ -96,10 +96,82 @@ forma de maximizar la probabilidad de alcanzar una meta es la **apuesta
 audaz**, apostar lo minimo necesario para llegar de un solo golpe. Cuantas
 menos tiradas, menos veces cobra la casa su 2,7 %.
 
-## 5. La estrategia "perfecta" (lo mejor que permiten las matematicas)
+## 5. Buscar "dibujos" que salgan mas
 
-No existe ninguna estrategia que gane a la larga. Las tres simulaciones lo
-confirman: la esperanza es negativa con cualquier combinacion de apuestas, y
+Pregunta: si en las tiradas se ve que ciertos numeros o formas salen mas, ¿se
+puede montar una estrategia que gane menos pero de forma mas segura con un
+dibujo concreto (parejas, trios, cuadros, cada X numeros, escaleras de 2, 3
+y 4 numeros...)?
+
+El modo `patrones` lo prueba con **1.808 dibujos distintos**: los 37 plenos,
+todos los caballos, transversales, cuadros y seisenas, diagonales, cruces,
+docenas, columnas, "cada 2, 3... 9 numeros", "terminados en X", sectores del
+cilindro de 3 a 17 casillas, vecinos del cero, tercio, huerfanos y 1.360
+combinaciones de 2 a 18 numeros. Se apuesta 1 EUR a cada numero del dibujo.
+El metodo es el de cualquier modelo serio: **buscar el dibujo en unas
+tiradas y comprobarlo en tiradas nuevas que no ha visto**.
+
+**A) Pocas tiradas (lo que apuntaria una persona en el casino)**: busco en
+500 tiradas y compruebo en 100.000 nuevas.
+
+| Dibujo encontrado | Beneficio en las 500 tiradas | En 100.000 tiradas nuevas |
+|---|---|---|
+| Combinacion de 5 numeros (el mejor) | **+41,1 %** | **-2,54 %** |
+| Caballo 19-22 | +54,8 % | -4,10 % |
+| Transversal 19-21 | +41,6 % | -1,88 % |
+| Seisena 19-24 | +27,2 % | -2,54 % |
+| Media de los 10 mejores | +34,8 % | **-2,46 %** |
+| Media de los 200 mejores | +16,0 % | **-2,65 %** |
+
+Con 500 tiradas, 83 dibujos parecen "estadisticamente significativos" y
+algunos dan mas de un +40 %. Pero es casualidad: en tiradas nuevas **todos**
+caen a la ventaja de la casa (-2,7 %). Al probar 1.800 dibujos siempre habra
+alguno que haya salido mucho; eso no predice nada.
+
+**B) Muchas tiradas (100.000 + 100.000)**: el mejor dibujo en entrenamiento
+ni siquiera es positivo (-1,9 %) y en prueba queda en -2,85 %.
+
+**C) Aprendizaje continuo**: cada 1.000 tiradas el modelo juega el dibujo
+que mejor va hasta ese momento. Resultado real: **-2,45 %**. Si en vez de
+elegir por fiabilidad (z) elige por beneficio, va a por los plenos con mas
+suerte y pierde el -7,4 %.
+
+**D) Dibujos dinamicos** que cambian en cada tirada segun lo que sale
+(ultimos numeros, vecinos del ultimo, lado opuesto del cilindro, calientes,
+frios, docena del ultimo y **escaleras 2-3-4** y 1-2-3-4-6-8, que suben un
+escalon al fallar y vuelven al primero al acertar). En 100.000 tiradas
+nuevas, los 19 dan entre -1,3 % y -5,0 %, todos compatibles con -2,7 %.
+
+**E) Grupo de control (rueda trucada)**: el mismo buscador encuentra el
+sector defectuoso ("sector de 5 centrado en 17": +42,6 % en entrenamiento y
+**+43,8 % en tiradas nuevas**). El aprendizaje continuo gana un +43 % y los
+dibujos "calientes" y la escalera 2-3-4 de calientes ganan entre un +6 % y un +27 %. El
+metodo funciona: si existiera un dibujo real, lo encontraria. En la rueda
+justa no lo encuentra porque no existe.
+
+**F) Ganar poco pero a menudo**: cubrir mas numeros solo cambia la forma de
+perder, no cuanto pierdes por euro.
+
+| Numeros cubiertos | Aciertas | Ganas si acierta | Pierdes si falla | Vas ganando tras 1.000 tiradas |
+|---|---|---|---|---|
+| 1 | 2,7 % | 35 EUR | 1 EUR | 45 % |
+| 4 | 10,8 % | 32 | 4 | 36 % |
+| 12 | 32,4 % | 24 | 12 | 27 % |
+| 18 | 48,6 % | 18 | 18 | 19 % |
+| 30 | 81,1 % | 6 | 30 | 3 % |
+| 32 | 86,5 % | 4 | 32 | 1 % |
+| 35 | 94,6 % | 1 | 35 | 0 % |
+
+Cubrir 32 numeros "gana" el 86 % de las tiradas, pero cada fallo se lleva 8
+aciertos y a las 1.000 tiradas solo va por delante el 1 %. Paradojicamente,
+cuantos **menos** numeros cubres, mas probable es ir ganando tras muchas
+tiradas: apuestas menos dinero por tirada y un solo acierto de 35:1 compensa
+muchos fallos.
+
+## 6. La estrategia "perfecta" (lo mejor que permiten las matematicas)
+
+No existe ninguna estrategia que gane a la larga. Las cuatro pruebas (modelos,
+estrategias, programacion dinamica y busqueda de dibujos) lo confirman: la esperanza es negativa con cualquier combinacion de apuestas, y
 cuantas mas sesiones repites, mas cerca del 100 % esta la probabilidad de ir
 perdiendo. Lo mas que se puede hacer es perder lo menos posible:
 
@@ -120,6 +192,11 @@ los 100. La perdida media es de ~1,4 EUR por sesion, frente a 6–25 EUR con
 martingala, Fibonacci, James Bond, etc. Aun asi la media es negativa, asi
 que repetirlo muchas veces garantiza perder: tras 1.000 sesiones solo un 27 %
 va por delante, y ese porcentaje sigue bajando hacia 0.
+
+Si quieres jugar con un dibujo que te guste (por ejemplo, una escalera de 2-3-4
+numeros), la forma menos mala es cubrir **pocos numeros** con apuestas pequenas
+y con una meta fija. Asi pierdes el mismo 2,7 % por euro, pero apuestas menos
+por tirada y un acierto de 35:1 te deja por delante durante mas tiempo.
 
 Lo unico que ha batido de verdad a la ruleta son defectos fisicos de la
 rueda (como el grupo de control de este experimento) o medir la bola en
